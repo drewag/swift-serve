@@ -7,5 +7,7 @@
 //
 
 public protocol Server {
-    init(port: Int, router: Router)
+    init(port: Int, router: Router) throws
+
+    func start() throws
 }
