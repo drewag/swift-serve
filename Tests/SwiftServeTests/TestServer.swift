@@ -33,7 +33,14 @@ struct TestServer: Server {
 
     func route(string: String, at url: URL, as method: HTTPMethod) throws -> Response {
         let path = url.relativePath
-        let data = string.data(using: .utf8)!
+        let data: Data
+        if string.isEmpty {
+            data = Data()
+        }
+        else {
+            data = string.data(using: .utf8)!
+        }
+
         let request = TestRequest(method: method, endpoint: url, data: data)
         switch try self.router.route(request: request, to: path) {
         case .handled(let response):

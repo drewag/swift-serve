@@ -34,7 +34,8 @@ class RouterTests: XCTestCase {
     func testNotARoute() throws {
         let response = try self.server.route(string: "", at: URL(string: "http://test.com/notARoute")!, as: .get)
         XCTAssertEqual(response.string, "")
-        XCTAssertEqual(response.status, .notFound)    }
+        XCTAssertEqual(response.status, .notFound)
+    }
 
     func testEcho() throws {
         var response = try self.server.route(string: "text", at: URL(string: "http://test.com/echo")!, as: .get)
