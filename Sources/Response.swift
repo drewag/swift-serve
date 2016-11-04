@@ -1,7 +1,7 @@
 import SwiftPlusPlus
 import Foundation
 
-public protocol Response {
+public protocol Response: CustomStringConvertible {
     var status: HTTPStatus {get}
 }
 
@@ -41,5 +41,11 @@ extension Request {
 
         let data = try JSONSerialization.data(withJSONObject: objectDict, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status)
+    }
+}
+
+extension Response  {
+    public var description: String {
+        return self.status.description
     }
 }

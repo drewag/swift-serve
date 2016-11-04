@@ -1,12 +1,14 @@
 import Foundation
 import SwiftPlusPlus
 
-public protocol Request {
+public protocol Request: CustomStringConvertible {
     var method: HTTPMethod {get}
     var endpoint: URL {get}
     var data: Data {get}
+    var headers: [String:String] {get}
 
-    func response(withData: Data, status: HTTPStatus) -> Response
+    func response(withData data: Data, status: HTTPStatus) -> Response
+    func response(withFileAt path: String, status: HTTPStatus) throws -> Response
 }
 
 extension Request {
@@ -47,5 +49,12 @@ extension Request {
         }
 
         return dict
+    }
+}
+
+extension Request {
+    public var description: String {
+        let now = Date().dateAndTime
+        return "\(now) \(self.method)\t\(self.endpoint.absoluteString)"
     }
 }

@@ -1,4 +1,4 @@
-public enum HTTPMethod {
+public enum HTTPMethod: String {
     case any
 
     case get
