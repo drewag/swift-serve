@@ -19,23 +19,23 @@ public class Route {
 }
 
 extension Route {
-    public static func any(_ path: String, handler: @escaping (Request) throws -> RouterResponse) -> Route {
+    public static func any(_ path: String? = nil, handler: @escaping (Request) throws -> RouterResponse) -> Route {
         return FixedHandlerRoute(path, method: .any, handler: handler)
     }
 
-    public static func any(_ path: String, router: Router) -> Route {
+    public static func any(_ path: String? = nil, router: Router) -> Route {
         return FixedRouterRoute(path, method: .any, router: router)
     }
 
-    public static func any<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
+    public static func anyWithParam<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
         return VariableRoute<Param>(method: .any, handleAllSubPaths: handleAllSubPaths, handler: handler)
     }
 
-    public static func get(_ path: String, handler: @escaping (Request) throws -> RouterResponse) -> Route {
+    public static func get(_ path: String? = nil, handler: @escaping (Request) throws -> RouterResponse) -> Route {
         return FixedHandlerRoute(path, method: .get, handler: handler)
     }
 
-    public static func get(_ path: String, router: Router) -> Route {
+    public static func get(_ path: String? = nil, router: Router) -> Route {
         return FixedRouterRoute(path, method: .get, router: router)
     }
 
@@ -43,27 +43,27 @@ extension Route {
         return VariableRoute<Param>(method: .get, handleAllSubPaths: handleAllSubPaths, handler: handler)
     }
 
-    public static func post(_ path: String, handler: @escaping (Request) throws -> RouterResponse) -> Route {
+    public static func post(_ path: String? = nil, handler: @escaping (Request) throws -> RouterResponse) -> Route {
         return FixedHandlerRoute(path, method: .post, handler: handler)
     }
 
-    public static func post(_ path: String, router: Router) -> Route {
+    public static func post(_ path: String? = nil, router: Router) -> Route {
         return FixedRouterRoute(path, method: .post, router: router)
     }
 
-    public static func post<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
+    public static func postWithParam<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
         return VariableRoute<Param>(method: .post, handleAllSubPaths: handleAllSubPaths, handler: handler)
     }
 
-    public static func put(_ path: String, handler: @escaping (Request) throws -> RouterResponse) -> Route {
+    public static func put(_ path: String? = nil, handler: @escaping (Request) throws -> RouterResponse) -> Route {
         return FixedHandlerRoute(path, method: .put, handler: handler)
     }
 
-    public static func put(_ path: String, router: Router) -> Route {
+    public static func put(_ path: String? = nil, router: Router) -> Route {
         return FixedRouterRoute(path, method: .put, router: router)
     }
 
-    public static func put<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
+    public static func putWithParam<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
         return VariableRoute<Param>(method: .put, handleAllSubPaths: handleAllSubPaths, handler: handler)
     }
 }
