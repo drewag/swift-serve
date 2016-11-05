@@ -6,6 +6,7 @@ public protocol Request: CustomStringConvertible {
     var endpoint: URL {get}
     var data: Data {get}
     var headers: [String:String] {get}
+    var host: String {get}
 
     func response(withData data: Data, status: HTTPStatus) -> Response
     func response(withFileAt path: String, status: HTTPStatus) throws -> Response
@@ -49,6 +50,10 @@ extension Request {
         }
 
         return dict
+    }
+
+    public var json: JSON? {
+        return try? JSON(data: self.data)
     }
 }
 
