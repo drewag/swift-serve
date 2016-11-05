@@ -100,7 +100,8 @@ fileprivate class FixedRouterRoute: Route {
     }
 
     public override func route(request: Request, to path: String) throws -> RouterResponse {
-        return try self.router.route(request: request, to: path)
+        let subPath = self.pathComponent.consume(path: path)
+        return try self.router.route(request: request, to: subPath)
     }
 }
 

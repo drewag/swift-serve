@@ -21,7 +21,6 @@ extension Router {
 
         for route in self.routes {
             if route.pathComponent.matches(path: path, using: request.method) {
-                let path = route.pathComponent.consume(path: path)
                 let response = try route.route(request: request, to: path)
                 switch response {
                 case .handled(_):
