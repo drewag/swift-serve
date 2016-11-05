@@ -6,17 +6,22 @@
 //
 //
 
-import Foundation
+import File
 
 public final class Logger {
     public static var main: Logger = Logger()
 
-    private var file: FileHandle? = nil
+    private var file: File? = nil
 
     public init() {}
 
     public func configure(forPath path: String) {
-        self.file = FileHandle(forWritingAtPath: path)
+        do {
+            self.file = try File(path: path, mode: .appendWrite)
+        }
+        catch let error {
+            print("Error opening log: \(error)")
+        }
     }
 
     public func log(_ text: String) {
@@ -25,13 +30,20 @@ public final class Logger {
             return
         }
 
-        file.write(text)
-        file.write("\n")
+        do {
+            try file.write(text)
+            try file.write("\n")
+            try file.flush(deadline: 0)
+        }
+        catch {
+            print(text)
+        }
     }
 }
 
-extension FileHandle {
-    func write(_ string: String) {
-        self.write(string.data(using: .utf8)!)
+extension File {
+    func write(_ string: String) throws {
+        try self.write(string, deadline: 0)
     }
 }
+
