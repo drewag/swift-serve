@@ -6,6 +6,7 @@ public protocol Request: CustomStringConvertible {
     var endpoint: URL {get}
     var data: Data {get}
     var headers: [String:String] {get}
+    var cookies: [String:String] {get}
     var host: String {get}
 
     func response(withData data: Data, status: HTTPStatus) -> Response
