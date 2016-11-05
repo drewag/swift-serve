@@ -31,12 +31,21 @@ extension Server {
     }
 
     public func response(for error: Error, from request: Request) -> Response {
+        func escape(_ string: String) -> String {
+            return string.replacingOccurrences(of: "\"", with: "\\\"")
+        }
+
         var json = "{"
-        json += "\"message\":\"\(error)\""
+        switch error {
+        case let error as UserReportableError:
+            json += "\"message\":\"\(escape(error.description))\""
+        default:
+            json += "\"message\":\"\(escape(error.localizedDescription))\""
+        }
         if let error = error as? ReportableResponseError {
-            json += ",\"identifier\":\"\(error.identifier ?? "other")\""
+            json += ",\"identifier\":\"\(escape(error.identifier ?? "other"))\""
             for (field, value) in error.otherInfo ?? [:] {
-                json += ",\"\(field)\":\"\(value)\""
+                json += ",\"\(escape(field))\":\"\(escape(value))\""
             }
         }
         json += "}"
