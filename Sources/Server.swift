@@ -11,7 +11,8 @@ import Foundation
 public protocol Server {
     var extraLogForRequest: ((Request) -> String?)? {get set}
 
-    init(port: Int, router: Router) throws
+    init(host: String, port: Int, router: Router) throws
+    init(host: String, port: Int, router: Router, certificatePath: String, privateKeyPath: String) throws
 
     func start() throws
 }
