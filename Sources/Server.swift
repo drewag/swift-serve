@@ -28,7 +28,7 @@ extension Server {
     }
 
     public func unhandledResponse(to request: Request) -> Response {
-        return request.response(body: "Path was: \(request.endpoint.absoluteString)")
+        return request.response(body: "Path was: \(request.endpoint.absoluteString)", status: .notFound)
     }
 
     public func response(for error: Error, from request: Request) -> Response {
