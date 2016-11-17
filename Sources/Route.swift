@@ -66,6 +66,18 @@ extension Route {
     public static func putWithParam<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
         return VariableRoute<Param>(method: .put, handleAllSubPaths: handleAllSubPaths, handler: handler)
     }
+
+    public static func delete(_ path: String? = nil, handler: @escaping (Request) throws -> RouterResponse) -> Route {
+        return FixedHandlerRoute(path, method: .delete, handler: handler)
+    }
+
+    public static func delete(_ path: String? = nil, router: Router) -> Route {
+        return FixedRouterRoute(path, method: .delete, router: router)
+    }
+
+    public static func deleteWithParam<Param: CapturableType>(handleAllSubPaths: Bool, handler: @escaping (Request, Param) throws -> RouterResponse) -> Route {
+        return VariableRoute<Param>(method: .delete, handleAllSubPaths: handleAllSubPaths, handler: handler)
+    }
 }
 
 fileprivate class FixedHandlerRoute: Route {

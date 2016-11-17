@@ -4,6 +4,7 @@ public enum HTTPMethod: String {
     case get
     case post
     case put
+    case delete
 }
 
 extension HTTPMethod {
@@ -28,6 +29,13 @@ extension HTTPMethod {
         case .put:
             switch other {
             case .put, .any:
+                return true
+            default:
+                return false
+            }
+        case .delete:
+            switch other {
+            case .delete, .any:
                 return true
             default:
                 return false
