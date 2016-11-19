@@ -38,7 +38,7 @@ extension Server {
 
         var json = "{"
         switch error {
-        case let error as UserReportableError:
+        case let error as ReportableResponseError:
             json += "\"message\":\"\(escape(error.description))\""
         default:
             json += "\"message\":\"\(escape(error.localizedDescription))\""
