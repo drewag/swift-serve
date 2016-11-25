@@ -56,6 +56,36 @@ extension Request {
     public var json: JSON? {
         return try? JSON(data: self.data)
     }
+
+    public func formValues() throws -> [String:String] {
+        guard let string = self.string else {
+            throw UserReportableError(.badRequest, "Form data is not a valid string")
+        }
+
+        var output = [String:String]()
+
+        for pair in string.components(separatedBy: "&") {
+            let components = pair.components(separatedBy: "=")
+            guard components.count == 2 else {
+                throw UserReportableError(.badRequest, "Malformed URL encoded form data")
+            }
+
+            func unencode(_ string: String) throws -> String {
+                let withSpaces = string.replacingOccurrences(of: "+", with: " ")
+                guard let unescaped = withSpaces.removingPercentEncoding else {
+                    throw UserReportableError(.badRequest, "Error unescaping \(string)")
+                }
+                return unescaped
+            }
+            let key = try unencode(components[0])
+            let value = try unencode(components[1])
+            if !value.isEmpty {
+                output[key] = value
+            }
+        }
+
+        return output
+    }
 }
 
 extension Request {
