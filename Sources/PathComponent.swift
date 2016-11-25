@@ -52,11 +52,11 @@ struct StaticPathComponent: PathComponent {
 
 struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
     let method: HTTPMethod
-    let allowSubPaths: Bool
+    let consumeEntireSubPath: Bool
 
-    init(type: CaptureType.Type, method: HTTPMethod, allowSubPaths: Bool) {
+    init(type: CaptureType.Type, method: HTTPMethod, consumeEntireSubPath: Bool) {
         self.method = method
-        self.allowSubPaths = allowSubPaths
+        self.consumeEntireSubPath = consumeEntireSubPath
     }
 
     func matches(path: String, using method: HTTPMethod) -> Bool {
@@ -75,7 +75,7 @@ struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
     }
 
     func captureText(fromPath path: String) -> String? {
-        guard !self.allowSubPaths else {
+        guard !self.consumeEntireSubPath else {
             return path
         }
 
@@ -85,10 +85,6 @@ struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
                 break
             }
             output.append(character)
-        }
-
-        if !allowSubPaths && output + "/" != path && output != path {
-            return nil
         }
 
         return output
