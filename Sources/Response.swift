@@ -52,6 +52,11 @@ extension Request {
         let data = try JSONSerialization.data(withJSONObject: objectDict, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status, headers: headers)
     }
+
+    public func response(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
+        let html = try filePath.map(FileContents()).map(Template(build: htmlBuild)).string()
+        return self.response(body: html, status: status, headers: headers)
+    }
 }
 
 extension Response  {
