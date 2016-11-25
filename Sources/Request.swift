@@ -9,8 +9,8 @@ public protocol Request: CustomStringConvertible {
     var cookies: [String:String] {get}
     var host: String {get}
 
-    func response(withData data: Data, status: HTTPStatus) -> Response
-    func response(withFileAt path: String, status: HTTPStatus) throws -> Response
+    func response(withData data: Data, status: HTTPStatus, headers: [String:String]) -> Response
+    func response(withFileAt path: String, status: HTTPStatus, headers: [String:String]) throws -> Response
 }
 
 extension Request {
