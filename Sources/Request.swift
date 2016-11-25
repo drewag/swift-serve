@@ -86,6 +86,13 @@ extension Request {
 
         return output
     }
+
+    public func createCookie(withName name: String, value: String, maxAge: TimeInterval) -> String {
+        let key = name.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlFragmentAllowed)!
+        let value = value.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlFragmentAllowed)!
+        let date = Date(timeIntervalSinceNow: maxAge)
+        return "\(key)=\(value); Expires=\(date.gmtDateTime)"
+    }
 }
 
 extension Request {
