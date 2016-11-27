@@ -7,7 +7,7 @@
 //
 
 public protocol FileWriter {
-    func openFileForWriting(at path: String)
+    init(path: String)
     func write(_ text: String) -> Bool
 }
 
