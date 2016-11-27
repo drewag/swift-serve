@@ -57,29 +57,32 @@ extension Request {
         return try? JSON(data: self.data)
     }
 
-    public func formValues() throws -> [String:String] {
-        guard let string = self.string else {
-            throw UserReportableError(.badRequest, "Form data is not a valid string")
-        }
-
+    public func formValues() -> [String:String] {
         var output = [String:String]()
 
-        for pair in string.components(separatedBy: "&") {
-            let components = pair.components(separatedBy: "=")
-            guard components.count == 2 else {
-                throw UserReportableError(.badRequest, "Malformed URL encoded form data")
+        if let components = URLComponents(url: self.endpoint, resolvingAgainstBaseURL: false) {
+            for item in components.queryItems ?? [] {
+                output[item.name] = item.value
             }
+        }
 
-            func unencode(_ string: String) throws -> String {
-                let withSpaces = string.replacingOccurrences(of: "+", with: " ")
-                guard let unescaped = withSpaces.removingPercentEncoding else {
-                    throw UserReportableError(.badRequest, "Error unescaping \(string)")
+        if let string = self.string {
+            for pair in string.components(separatedBy: "&") {
+                let components = pair.components(separatedBy: "=")
+                guard components.count == 2 else {
+                    continue
                 }
-                return unescaped
-            }
-            let key = try unencode(components[0])
-            let value = try unencode(components[1])
-            if !value.isEmpty {
+
+                func unencode(_ string: String) -> String? {
+                    let withSpaces = string.replacingOccurrences(of: "+", with: " ")
+                    return withSpaces.removingPercentEncoding
+                }
+                guard let key = unencode(components[0]) else {
+                    continue
+                }
+                guard let value = unencode(components[1]), !value.isEmpty else {
+                    continue
+                }
                 output[key] = value
             }
         }
