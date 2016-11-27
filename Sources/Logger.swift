@@ -6,44 +6,24 @@
 //
 //
 
-import File
+public protocol FileWriter {
+    func openFileForWriting(at path: String)
+    func write(_ text: String) -> Bool
+}
 
-public final class Logger {
-    public static var main: Logger = Logger()
+public class Logger {
+    static public var main = Logger()
 
-    private var file: File? = nil
+    private var fileWriter: FileWriter?
 
-    public init() {}
-
-    public func configure(forPath path: String) {
-        do {
-            self.file = try File(path: path, mode: .appendWrite)
-        }
-        catch let error {
-            print("Error opening log: \(error)")
-        }
+    public func configureWithWriter(fileWriter: FileWriter) {
+        self.fileWriter = fileWriter
     }
 
     public func log(_ text: String) {
-        guard let file = self.file else {
+        guard let fileWriter = self.fileWriter, fileWriter.write(text) else {
             print(text)
             return
         }
-
-        do {
-            try file.write(text)
-            try file.write("\n")
-            try file.flush(deadline: 0)
-        }
-        catch {
-            print(text)
-        }
     }
 }
-
-extension File {
-    func write(_ string: String) throws {
-        try self.write(string, deadline: 0)
-    }
-}
-

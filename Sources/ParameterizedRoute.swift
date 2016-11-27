@@ -13,13 +13,13 @@ public class ParameterizedRoute<Param: CapturableType> {
         self.pathComponent = pathComponent
     }
 
-    func route(request: Request, param: Param, to path: String) throws -> RouterResponse {
+    func route(request: Request, param: Param, to path: String) throws -> ResponseStatus {
         fatalError("Must Override")
     }
 }
 
 extension ParameterizedRoute {
-    public static func any(_ path: String? = nil, handler: @escaping (Request, Param) throws -> RouterResponse) -> ParameterizedRoute<Param> {
+    public static func any(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
         return FixedHandlerRoute(path, method: .any, handler: handler)
     }
 
@@ -27,7 +27,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .any, router: router)
     }
 
-    public static func get(_ path: String? = nil, handler: @escaping (Request, Param) throws -> RouterResponse) -> ParameterizedRoute<Param> {
+    public static func get(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
         return FixedHandlerRoute(path, method: .get, handler: handler)
     }
 
@@ -35,7 +35,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .get, router: router)
     }
 
-    public static func post(_ path: String? = nil, handler: @escaping (Request, Param) throws -> RouterResponse) -> ParameterizedRoute<Param> {
+    public static func post(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
         return FixedHandlerRoute(path, method: .post, handler: handler)
     }
 
@@ -43,7 +43,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .post, router: router)
     }
 
-    public static func put(_ path: String? = nil, handler: @escaping (Request, Param) throws -> RouterResponse) -> ParameterizedRoute<Param> {
+    public static func put(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
         return FixedHandlerRoute(path, method: .put, handler: handler)
     }
 
@@ -51,7 +51,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .put, router: router)
     }
 
-    public static func delete(_ path: String? = nil, handler: @escaping (Request, Param) throws -> RouterResponse) -> ParameterizedRoute<Param> {
+    public static func delete(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
         return FixedHandlerRoute(path, method: .delete, handler: handler)
     }
 
@@ -61,9 +61,9 @@ extension ParameterizedRoute {
 }
 
 fileprivate class FixedHandlerRoute<Param: CapturableType>: ParameterizedRoute<Param> {
-    let handler: (Request, Param) throws -> RouterResponse
+    let handler: (Request, Param) throws -> ResponseStatus
 
-    init(_ prefix: String?, method: HTTPMethod, handler: @escaping (Request, Param) throws -> RouterResponse) {
+    init(_ prefix: String?, method: HTTPMethod, handler: @escaping (Request, Param) throws -> ResponseStatus) {
         self.handler = handler
         if let prefix = prefix {
             super.init(pathComponent: StaticPathComponent(pattern: prefix, method: method, allowSubPaths: false))
@@ -73,7 +73,7 @@ fileprivate class FixedHandlerRoute<Param: CapturableType>: ParameterizedRoute<P
         }
     }
 
-    public override func route(request: Request, param: Param, to path: String) throws -> RouterResponse {
+    public override func route(request: Request, param: Param, to path: String) throws -> ResponseStatus {
         return try self.handler(request, param)
     }
 }
@@ -91,7 +91,7 @@ fileprivate class FixedRouterRoute<R: ParameterizedRouter>: ParameterizedRoute<R
         }
     }
 
-    public override func route(request: Request, param: R.Param, to path: String) throws -> RouterResponse {
+    public override func route(request: Request, param: R.Param, to path: String) throws -> ResponseStatus {
         let subPath = self.pathComponent.consume(path: path)
         return try self.router.route(request: request, pathParameter: param, to: subPath)
     }

@@ -13,7 +13,7 @@ public protocol ParameterizedRouter {
 }
 
 extension ParameterizedRouter {
-    public func route(request: Request, pathParameter: Param, to path: String) throws -> RouterResponse {
+    public func route(request: Request, pathParameter: Param, to path: String) throws -> ResponseStatus {
         for route in self.routes {
             if route.pathComponent.matches(path: path, using: request.method) {
                 let response = try route.route(request: request, param: pathParameter, to: path)

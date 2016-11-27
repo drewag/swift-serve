@@ -6,7 +6,7 @@
 //
 //
 
-public enum RouterResponse {
+public enum ResponseStatus {
     case unhandled
     case handled(Response)
 }
@@ -16,7 +16,7 @@ public protocol Router {
 }
 
 extension Router {
-    public func route(request: Request, to path: String) throws -> RouterResponse {
+    public func route(request: Request, to path: String) throws -> ResponseStatus {
         let path = self.fix(path: path)
 
         for route in self.routes {
