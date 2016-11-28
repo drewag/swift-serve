@@ -18,6 +18,14 @@ extension Request {
         return String(data: self.data, encoding: .utf8)
     }
 
+    public var baseURL: URL {
+        guard let host = self.headers["Host"] else {
+            return URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
+        }
+        return URL(string: "https://\(host)", relativeTo: nil)
+            ?? URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
+    }
+
     public func encodableFromJson<Encodable: EncodableType>() throws -> Encodable? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
         return NativeTypesDecoder.decodableTypeFromObject(object)
