@@ -68,9 +68,16 @@ extension Request {
     public func formValues() -> [String:String] {
         var output = [String:String]()
 
-        if let components = URLComponents(url: self.endpoint, resolvingAgainstBaseURL: false) {
-            for item in components.queryItems ?? [] {
-                output[item.name] = item.value
+        var urlComponents = self.endpoint.absoluteString.components(separatedBy: "?")
+        if urlComponents.count > 1 {
+            urlComponents.removeFirst()
+            let query = urlComponents.joined()
+            for variable in query.components(separatedBy: "&") {
+                var components = variable.components(separatedBy: "=")
+                if components.count > 1 {
+                    let key = components.removeFirst()
+                    output[key.removingPercentEncoding ?? key] = components.joined().removingPercentEncoding
+                }
             }
         }
 
