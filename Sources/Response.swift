@@ -55,6 +55,13 @@ extension Request {
 
     public func response(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
         let html = try filePath.map(FileContents()).map(Template(build: htmlBuild)).string()
+        var headers = headers
+        if headers["Content-Type"] == nil {
+            headers["Content-Type"] = "text/html"
+        }
+        if headers["Content-Disposition"] == nil {
+            headers["Content-Disposition"] = "inline"
+        }
         return self.response(body: html, status: status, headers: headers)
     }
 }
