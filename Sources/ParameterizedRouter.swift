@@ -7,7 +7,7 @@
 //
 
 public protocol ParameterizedRouter {
-    associatedtype Param: CapturableType
+    associatedtype Param
 
     var routes: [ParameterizedRoute<Param>] {get}
 }
@@ -27,4 +27,8 @@ extension ParameterizedRouter {
         }
         return .unhandled
     }
+}
+
+struct InPlaceParameterizedRouter<Param>: ParameterizedRouter {
+    let routes: [ParameterizedRoute<Param>]
 }

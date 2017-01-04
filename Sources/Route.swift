@@ -27,12 +27,22 @@ extension Route {
         return FixedRouterRoute(path, method: .any, router: router)
     }
 
+    public static func any(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.any(path, router: router)
+    }
+
     public static func anyWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: .any, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func anyWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route {
+    public static func anyWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func anyWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.anyWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func get(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
@@ -43,12 +53,22 @@ extension Route {
         return FixedRouterRoute(path, method: .get, router: router)
     }
 
+    public static func get(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.get(path, router: router)
+    }
+
     public static func getWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: .get, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func getWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route {
+    public static func getWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: .get, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func getWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.getWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func post(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
@@ -59,12 +79,22 @@ extension Route {
         return FixedRouterRoute(path, method: .post, router: router)
     }
 
+    public static func post(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.post(path, router: router)
+    }
+
     public static func postWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: .post, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func postWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route {
+    public static func postWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func postWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.postWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func put(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
@@ -75,12 +105,22 @@ extension Route {
         return FixedRouterRoute(path, method: .put, router: router)
     }
 
+    public static func put(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.put(path, router: router)
+    }
+
     public static func putWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: .put, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func putWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route {
+    public static func putWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func putWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.putWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func delete(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
@@ -91,12 +131,22 @@ extension Route {
         return FixedRouterRoute(path, method: .delete, router: router)
     }
 
+    public static func delete(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.delete(path, router: router)
+    }
+
     public static func deleteWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: .delete, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route {
+    public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.deleteWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 }
 
@@ -152,7 +202,7 @@ fileprivate final class VariableRoute<Param: CapturableType>: Route {
     }
 }
 
-fileprivate final class VariableRouterRoute<R: ParameterizedRouter>: Route {
+fileprivate final class VariableRouterRoute<R: ParameterizedRouter>: Route where R.Param: CapturableType {
     let router: R
 
     init(method: HTTPMethod, consumeEntireSubPath: Bool, router: R) {

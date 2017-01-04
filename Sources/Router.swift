@@ -49,3 +49,7 @@ extension Router {
     }
 
 }
+
+struct InPlaceRouter: Router {
+    let routes: [Route]
+}
