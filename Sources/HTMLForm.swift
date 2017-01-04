@@ -86,10 +86,14 @@ extension Request {
     }
 
     public func responseStatus<Field: HTMLFormField>(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
+        return try self.responseStatus(htmlFromFiles: [filePath], status: status, headers: headers, form: form, htmlBuild: htmlBuild)
+    }
+
+    public func responseStatus<Field: HTMLFormField>(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
         if let response = form.response {
             return response
         }
-        return .handled(try self.response(htmlFromFile: filePath, status: status, headers: headers, htmlBuild: { builder in
+        return .handled(try self.response(htmlFromFiles: filePaths, status: status, headers: headers, htmlBuild: { builder in
             for (key, value) in form.fields {
                 builder[key.rawValue] = value
             }
