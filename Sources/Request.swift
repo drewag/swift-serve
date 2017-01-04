@@ -8,6 +8,7 @@ public protocol Request: CustomStringConvertible {
     var headers: [String:String] {get}
     var cookies: [String:String] {get}
     var host: String {get}
+    var ip: String {get}
 
     func response(withData data: Data, status: HTTPStatus, headers: [String:String]) -> Response
     func response(withFileAt path: String, status: HTTPStatus, headers: [String:String]) throws -> Response
@@ -26,20 +27,20 @@ extension Request {
             ?? URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
     }
 
-    public func encodableFromJson<Encodable: EncodableType>() throws -> Encodable? {
+    public func decodableFromJson<Decodable: DecodableType>() throws -> Decodable? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
-        return NativeTypesDecoder.decodableTypeFromObject(object)
+        return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
     }
 
-    public func encodableFromJsonArray<Encodable: EncodableType>() throws -> [Encodable]? {
+    public func decodableFromJsonArray<Decodable: DecodableType>() throws -> [Decodable]? {
         guard let objectArray = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [Any] else {
             return nil
         }
 
-        var array = [Encodable]()
+        var array = [Decodable]()
 
         for object in objectArray {
-            if let decodable: Encodable = NativeTypesDecoder.decodableTypeFromObject(object) {
+            if let decodable: Decodable = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote) {
                 array.append(decodable)
             }
         }
@@ -47,15 +48,15 @@ extension Request {
         return array
     }
 
-    public func encodableFromJsonDict<Encodable: EncodableType>() throws -> [String:Encodable]? {
+    public func decodableFromJsonDict<Decodable: DecodableType>() throws -> [String:Decodable]? {
         guard let objectDict = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [String:Any] else {
             return nil
         }
 
-        var dict = [String:Encodable]()
+        var dict = [String:Decodable]()
 
         for (key, object) in objectDict {
-            dict[key] = NativeTypesDecoder.decodableTypeFromObject(object)
+            dict[key] = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
         }
 
         return dict

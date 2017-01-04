@@ -15,6 +15,9 @@ extension Request {
         return try self.response(withFileAt: path, status: status, headers: [:])
     }
 
+    public func response(withFileAt url: URL, status: HTTPStatus) throws -> Response {
+        return try self.response(withFileAt: url.relativePath, status: status, headers: [:])
+    }
 
     public func response(status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
         return self.response(withData: Data(), status: status, headers: headers)
@@ -25,39 +28,55 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: EncodableType, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        let object = NativeTypesEncoder.objectFromEncodable(json)
+    public func response(json: EncodableType, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+        let object = NativeTypesEncoder.objectFromEncodable(json, mode: mode)
         let data = try JSONSerialization.data(withJSONObject: object, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: [EncodableType], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+    public func response(json: [EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
         var objectArray = [Any]()
 
         for value in json {
-            objectArray.append(NativeTypesEncoder.objectFromEncodable(value))
+            objectArray.append(NativeTypesEncoder.objectFromEncodable(value, mode: mode))
         }
 
         let data = try JSONSerialization.data(withJSONObject: objectArray, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: [String:EncodableType], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+    public func response(json: [String:EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
         var objectDict = [String:Any]()
 
         for (key, value) in json {
-            objectDict[key] = NativeTypesEncoder.objectFromEncodable(value)
+            objectDict[key] = NativeTypesEncoder.objectFromEncodable(value, mode: mode)
         }
 
         let data = try JSONSerialization.data(withJSONObject: objectDict, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status, headers: headers)
     }
 
+    public func response(htmlFromFile fileUrl: URL, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
+        return try self.response(htmlFromFiles: [fileUrl], headers: headers, htmlBuild: htmlBuild)
+    }
+
     public func response(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
-        let html = try filePath.map(FileContents()).map(Template(build: htmlBuild)).string()
+        return try self.response(htmlFromFiles: [filePath], status: status, headers: headers, htmlBuild: htmlBuild)
+    }
+
+    public func response(htmlFromFiles fileUrls: [URL], status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
+        return try self.response(htmlFromFiles: fileUrls.map({$0.relativePath}), headers: headers, htmlBuild: htmlBuild)
+    }
+
+    public func response(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
+        return try self.response(textFromFiles: filePaths, contentType: "text/html", status: status, headers: headers, textBuild: htmlBuild)
+    }
+
+    public func response(textFromFiles filePaths: [String], contentType: String, status: HTTPStatus = .ok, headers: [String:String] = [:], textBuild: (TemplateBuilder) -> ()) throws -> Response {
+        let html = try filePaths.map(FileContents()).reduce(Separator()).map(Template(build: textBuild)).string()
         var headers = headers
         if headers["Content-Type"] == nil {
-            headers["Content-Type"] = "text/html"
+            headers["Content-Type"] = contentType
         }
         if headers["Content-Disposition"] == nil {
             headers["Content-Disposition"] = "inline"
