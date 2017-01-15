@@ -34,6 +34,10 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
+    public func response(redirectingTo to: String) -> Response {
+        return self.response(status: .movedPermanently, headers: ["Location": "\(to)"])
+    }
+
     public func response(json: [EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
         var objectArray = [Any]()
 
