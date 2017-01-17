@@ -7,9 +7,10 @@
 //
 
 import Foundation
+import SwiftPlusPlus
 
 public protocol ClientRequest {
-    init(method: HTTPMethod, url: URL, headers: [String:String], body: String)
+    init(method: HTTPMethod, url: URL, headers: [String:String], username: String?, password: String?, body: String)
 }
 
 public protocol ClientResponse {
@@ -32,7 +33,32 @@ public class ClientFactory {
         return try self.clientType.init(url: url)
     }
 
-    public func createRequest(withMethod method: HTTPMethod, url: URL, headers: [String:String], body: String) -> ClientRequest {
-        return self.requestType.init(method: method, url: url, headers: headers, body: body)
+    public func createRequest(
+        withMethod method: HTTPMethod,
+        url: URL,
+        headers: [String:String] = [:],
+        username: String? = nil,
+        password: String? = nil,
+        body: String
+        ) -> ClientRequest
+    {
+        return self.requestType.init(
+            method: method,
+            url: url,
+            headers: headers,
+            username: username,
+            password: password,
+            body: body
+        )
+    }
+}
+
+extension ClientResponse {
+    public var text: String? {
+        return String(data: self.body, encoding: .utf8)
+    }
+
+    public var json: JSON? {
+        return try? JSON(data: self.body)
     }
 }
