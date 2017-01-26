@@ -13,7 +13,7 @@ public protocol HTMLFormField: RawRepresentable, Hashable {
 }
 
 public class HTMLForm<Field: HTMLFormField> where Field.RawValue == String {
-    fileprivate let fields: [Field:String]
+    fileprivate var fields: [Field:String]
     fileprivate var error: String? = nil
     fileprivate var response: ResponseStatus? = nil
     public var message: String? = nil
@@ -31,6 +31,10 @@ public class HTMLForm<Field: HTMLFormField> where Field.RawValue == String {
             throw UserReportableError(.badRequest, "\(self.display(for: field)) is required")
         }
         return value
+    }
+
+    public func clear(field: Field) {
+        self.fields[field] = nil
     }
 
     func display(for field: Field) -> String {
