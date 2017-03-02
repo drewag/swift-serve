@@ -96,7 +96,7 @@ extension Request {
                 guard let key = unencode(components[0]) else {
                     continue
                 }
-                guard let value = unencode(components[1]), !value.isEmpty else {
+                guard let value = unencode(components[1]) else {
                     continue
                 }
                 output[key] = value
