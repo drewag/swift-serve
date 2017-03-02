@@ -58,16 +58,17 @@ public class HTMLForm<Field: HTMLFormField> where Field.RawValue == String {
 }
 
 extension Request {
-    public func parseForm<Field: HTMLFormField>(process: (HTMLForm<Field>) throws -> (ResponseStatus?)) -> HTMLForm<Field> {
+    public func parseForm<Field: HTMLFormField>(defaultValues: [Field:String?] = [:], process: (HTMLForm<Field>) throws -> (ResponseStatus?)) -> HTMLForm<Field> {
         guard Field.all.count > 0 else {
             return HTMLForm(fields: [:])
         }
 
         var parsedFields = [Field:String]()
-
         let formValues = self.formValues()
         for field in Field.all {
             parsedFields[field] = formValues[field.rawValue]
+                ?? defaultValues[field]
+                ?? ""
         }
 
         let form = HTMLForm(fields: parsedFields)
