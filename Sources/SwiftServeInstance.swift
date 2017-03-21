@@ -117,7 +117,9 @@ private extension SwiftServeInstance {
         }
 
         self.commandLineParser.command(named: "db") { parser in
-            parser.command(named: "create-role") { parser in
+            parser.command(named: "recreate-role") { parser in
+                print("DROP DATABASE IF EXISTS \(self.databaseName);")
+                print("DROP ROLE IF EXISTS \(self.databaseRole);")
                 print("CREATE ROLE \(self.databaseRole) WITH LOGIN PASSWORD '\(DatabaseSetup!.password)';")
             }
 
