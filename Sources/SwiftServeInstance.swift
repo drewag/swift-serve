@@ -38,6 +38,7 @@ public struct SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
 private struct SwiftServeInstanceSpec {
     let version: String
     let domain: String
+    let extraInfoSpec: String
 }
 
 private extension SwiftServeInstance {
@@ -109,7 +110,8 @@ private extension SwiftServeInstance {
 
     func setupCommands() {
         self.commandLineParser.command(named: "info") { parser in
-            let spec = SwiftServeInstanceSpec(version: "5.0", domain: self.domain)
+            let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
+            let spec = SwiftServeInstanceSpec(version: "5.0", domain: self.domain, extraInfoSpec: dict)
             let object = NativeTypesEncoder.objectFromEncodable(spec, mode: .saveLocally)
             let data = try JSONSerialization.data(withJSONObject: object, options: .prettyPrinted)
             let string = String(data: data, encoding: .utf8) ?? ""
@@ -176,20 +178,17 @@ private extension SwiftServeInstance {
     }
 }
 
-extension SwiftServeInstanceSpec: CodableType {
+extension SwiftServeInstanceSpec: EncodableType {
     struct Keys {
         class version: CoderKey<String> {}
         class domain: CoderKey<String> {}
-    }
-
-    init(decoder: DecoderType) throws {
-        self.version = try decoder.decode(Keys.version.self)
-        self.domain = try decoder.decode(Keys.domain.self)
+        class extraInfoSpec: CoderKey<String> {}
     }
 
     func encode(_ encoder: EncoderType) {
         encoder.encode(self.version, forKey: Keys.version.self)
         encoder.encode(self.domain, forKey: Keys.domain.self)
+        encoder.encode(self.extraInfoSpec, forKey: Keys.extraInfoSpec.self)
     }
 }
 
