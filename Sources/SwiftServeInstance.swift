@@ -148,8 +148,6 @@ private extension SwiftServeInstance {
                 for index in currentVersion ..< self.databaseChanges.count {
                     let _ = try connection.execute(self.databaseChanges[index].forwardQuery)
                 }
-                let _ = try connection.execute("GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA public TO \(self.databaseRole);")
-                let _ = try connection.execute("GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO \(self.databaseRole);")
                 try SwiftServe.updateVersion(to: self.databaseChanges.count, in: connection)
             }
             try parser.parse()
