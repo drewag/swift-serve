@@ -13,8 +13,8 @@ import TextTransformers
 import SQL
 
 public struct Scheme {
-    let name: String
-    let arguments: [String]
+    public let name: String
+    public let arguments: [String]
 
     public init(name: String, arguments: [String]) {
         self.name = name
