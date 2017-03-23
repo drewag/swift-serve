@@ -12,12 +12,23 @@ import Foundation
 import TextTransformers
 import SQL
 
+public struct Scheme {
+    let name: String
+    let arguments: [String]
+
+    public init(name: String, arguments: [String]) {
+        self.name = name
+        self.arguments = arguments
+    }
+}
+
 public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
     public let databaseChanges: [DatabaseChange]
     public let routes: [Route]
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser = Parser(arguments: CommandLine.arguments)
+    fileprivate let extraSchemes: [Scheme]
 
     public let domain: String
     public lazy var extraInfo = {
@@ -28,11 +39,19 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
         return URL(string: "http://localhost:8080")!
     }
 
-    public init(domain: String, databaseChanges: [DatabaseChange], routes: [Route], customizeCommandLineParser: ((Parser) -> ())? = nil) {
+    public init(
+        domain: String,
+        databaseChanges: [DatabaseChange],
+        routes: [Route],
+        customizeCommandLineParser: ((Parser) -> ())? = nil,
+        extraSchemes: [Scheme] = []
+        )
+    {
         self.databaseChanges = databaseChanges
         self.domain = domain
         self.routes = routes
         self.customizeCommandLineParser = customizeCommandLineParser
+        self.extraSchemes = extraSchemes
 
         self.loadDatabaseSetup()
         self.setupCommands()
@@ -44,6 +63,7 @@ public struct SwiftServeInstanceSpec {
     public let version: (major: Int, minor: Int)
     public let domain: String
     public let extraInfoSpec: String
+    public let extraSchemes: [Scheme]
 }
 
 private extension SwiftServeInstance {
@@ -116,7 +136,7 @@ private extension SwiftServeInstance {
     func setupCommands() {
         self.commandLineParser.command(named: "info") { parser in
             let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
-            let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict)
+            let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes)
             let object = NativeTypesEncoder.objectFromEncodable(spec, mode: .saveLocally)
             let data = try JSONSerialization.data(withJSONObject: object, options: .prettyPrinted)
             let string = String(data: data, encoding: .utf8) ?? ""
@@ -191,6 +211,7 @@ extension SwiftServeInstanceSpec: CodableType {
         class version: CoderKey<String> {}
         class domain: CoderKey<String> {}
         class extraInfoSpec: CoderKey<String> {}
+        class extraSchemes: CoderKey<Scheme> {}
     }
 
     public init(decoder: DecoderType) throws {
@@ -199,12 +220,31 @@ extension SwiftServeInstanceSpec: CodableType {
         self.version = (Int(components[0])!, Int(components[1])!)
         self.domain = try decoder.decode(Keys.domain.self)
         self.extraInfoSpec = try decoder.decode(Keys.extraInfoSpec.self)
+        self.extraSchemes = try decoder.decodeArray(Keys.extraSchemes.self)
     }
 
     public func encode(_ encoder: EncoderType) {
         encoder.encode("\(self.version.major).\(self.version.minor)", forKey: Keys.version.self)
         encoder.encode(self.domain, forKey: Keys.domain.self)
         encoder.encode(self.extraInfoSpec, forKey: Keys.extraInfoSpec.self)
+        encoder.encode(self.extraSchemes, forKey: Keys.extraSchemes.self)
+    }
+}
+
+extension Scheme: CodableType {
+    struct Keys {
+        class name: CoderKey<String> {}
+        class arguments: CoderKey<String> {}
+    }
+
+    public init(decoder: DecoderType) throws {
+        self.name = try decoder.decode(Keys.name.self)
+        self.arguments = try decoder.decodeArray(Keys.arguments.self)
+    }
+
+    public func encode(_ encoder: EncoderType) {
+        encoder.encode(self.name, forKey: Keys.name.self)
+        encoder.encode(self.arguments, forKey: Keys.arguments.self)
     }
 }
 
