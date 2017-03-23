@@ -17,6 +17,7 @@ public struct FieldSpec: CustomStringConvertible {
         case timestamp
         case ipAddress
         case date
+        case bool
     }
 
     let name: String
@@ -47,6 +48,8 @@ public struct FieldSpec: CustomStringConvertible {
             else {
                 description += "varchar"
             }
+        case .bool:
+            description += "boolean"
         }
         if isUnique {
             description += " UNIQUE"
