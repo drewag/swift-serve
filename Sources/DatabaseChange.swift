@@ -79,15 +79,21 @@ public struct FieldSpec: CustomStringConvertible {
 public struct CreateTable: DatabaseChange {
     let name: String
     let fields: [FieldSpec]
+    let primaryKey: [String]
 
-    public init(name: String, fields: [FieldSpec]) {
+    public init(name: String, fields: [FieldSpec], primaryKey: [String] = []) {
         self.name = name
         self.fields = fields
+        self.primaryKey = primaryKey
     }
 
     public var forwardQuery: String {
         var query = "CREATE TABLE \(name) ("
-        query += self.fields.map({$0.description}).joined(separator: ",")
+        var specs = self.fields.map({$0.description})
+        if !self.primaryKey.isEmpty {
+            specs.append("PRIMARY KEY (\(self.primaryKey.joined(separator: ",")))")
+        }
+        query += specs.joined(separator: ",")
         query += ")"
         return query
     }
