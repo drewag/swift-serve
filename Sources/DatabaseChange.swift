@@ -11,6 +11,27 @@ public protocol DatabaseChange {
     var revertQuery: String {get}
 }
 
+public struct Reference {
+    public enum Action: String {
+        case none = "NO ACTION"
+        case cascade = "CASCADE"
+        case setNull = "SET NULL"
+        case setDefault = "SET DEFAULT"
+    }
+
+    let table: String
+    let field: String
+    let onDelete: Action
+    let onUpdate: Action
+
+    public init(table: String, field: String, onDelete: Action = .none, onUpdate: Action = .none) {
+        self.table = table
+        self.field = field
+        self.onDelete = onDelete
+        self.onUpdate = onUpdate
+    }
+}
+
 public struct FieldSpec: CustomStringConvertible {
     public enum DataType {
         case string(length: Int?)
@@ -25,19 +46,22 @@ public struct FieldSpec: CustomStringConvertible {
     let isUnique: Bool
     let isPrimaryKey: Bool
     let type: DataType
+    let references: Reference?
 
-    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false) {
+    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: Reference? = nil) {
         self.name = name
         self.type = type
         self.allowNull = allowNull
         self.isUnique = isUnique
         self.isPrimaryKey = false
+        self.references = references
     }
 
     public init(name: String, type: DataType, isPrimaryKey: Bool) {
         self.name = name
         self.type = type
         self.isPrimaryKey = isPrimaryKey
+        self.references = nil
 
         // Setting these will mean they won't be added to the command
         self.allowNull = true
@@ -71,6 +95,10 @@ public struct FieldSpec: CustomStringConvertible {
         }
         if !self.allowNull {
             description += " NOT NULL"
+        }
+        if let references = self.references {
+            description += " REFERENCES \(references.table)(\(references.field))"
+            description += " ON DELETE \(references.onDelete.rawValue) ON UPDATE \(references.onUpdate.rawValue)"
         }
         return description
     }
