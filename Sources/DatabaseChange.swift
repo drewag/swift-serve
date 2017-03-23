@@ -23,6 +23,7 @@ public struct FieldSpec: CustomStringConvertible {
     let name: String
     let allowNull: Bool
     let isUnique: Bool
+    let isPrimaryKey: Bool
     let type: DataType
 
     public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false) {
@@ -30,6 +31,17 @@ public struct FieldSpec: CustomStringConvertible {
         self.type = type
         self.allowNull = allowNull
         self.isUnique = isUnique
+        self.isPrimaryKey = false
+    }
+
+    public init(name: String, type: DataType, isPrimaryKey: Bool) {
+        self.name = name
+        self.type = type
+        self.isPrimaryKey = isPrimaryKey
+
+        // Setting these will mean they won't be added to the command
+        self.allowNull = true
+        self.isUnique = false
     }
 
     public var description: String {
@@ -50,6 +62,9 @@ public struct FieldSpec: CustomStringConvertible {
             }
         case .bool:
             description += "boolean"
+        }
+        if isPrimaryKey {
+            description += " PRIMARY KEY"
         }
         if isUnique {
             description += " UNIQUE"
