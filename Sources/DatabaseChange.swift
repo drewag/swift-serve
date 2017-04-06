@@ -8,7 +8,7 @@
 
 public protocol DatabaseChange {
     var forwardQuery: String {get}
-    var revertQuery: String {get}
+    var revertQuery: String? {get}
 }
 
 public struct Reference {
@@ -32,13 +32,43 @@ public struct Reference {
     }
 }
 
+public struct Constraint: CustomStringConvertible {
+    public enum Kind {
+        case unique([String])
+    }
+
+    let name: String
+    let kind: Kind
+
+    public init(name: String, kind: Kind) {
+        self.name = name
+        self.kind = kind
+    }
+
+    public var description: String {
+        var description = "CONSTRAINT \(self.name) "
+        switch kind {
+        case .unique(let unique):
+            description += "UNIQUE ("
+            description += unique.joined(separator: ",")
+            description += ")"
+        }
+        return description
+    }
+}
+
 public struct FieldSpec: CustomStringConvertible {
     public enum DataType {
         case string(length: Int?)
         case timestamp
+        case timestampWithTimeZone
+        case interval
         case ipAddress
         case date
         case bool
+        case serial
+        case integer
+        case double
     }
 
     let name: String
@@ -77,6 +107,8 @@ public struct FieldSpec: CustomStringConvertible {
             description += "inet"
         case .timestamp:
             description += "timestamp"
+        case .timestampWithTimeZone:
+            description += "timestamp with time zone"
         case .string(let length):
             if let length = length {
                 description += "varchar(\(length))"
@@ -86,6 +118,14 @@ public struct FieldSpec: CustomStringConvertible {
             }
         case .bool:
             description += "boolean"
+        case .serial:
+            description += "SERIAL"
+        case .integer:
+            description += "integer"
+        case .double:
+            description += "double precision"
+        case .interval:
+            description += "interval"
         }
         if isPrimaryKey {
             description += " PRIMARY KEY"
@@ -107,12 +147,14 @@ public struct FieldSpec: CustomStringConvertible {
 public struct CreateTable: DatabaseChange {
     let name: String
     let fields: [FieldSpec]
+    let constraints: [Constraint]
     let primaryKey: [String]
 
-    public init(name: String, fields: [FieldSpec], primaryKey: [String] = []) {
+    public init(name: String, fields: [FieldSpec], primaryKey: [String] = [], constraints: [Constraint] = []) {
         self.name = name
         self.fields = fields
         self.primaryKey = primaryKey
+        self.constraints = constraints
     }
 
     public var forwardQuery: String {
@@ -121,12 +163,52 @@ public struct CreateTable: DatabaseChange {
         if !self.primaryKey.isEmpty {
             specs.append("PRIMARY KEY (\(self.primaryKey.joined(separator: ",")))")
         }
+        specs += self.constraints.map({$0.description})
         query += specs.joined(separator: ",")
         query += ")"
         return query
     }
 
-    public var revertQuery: String {
+    public var revertQuery: String? {
         return "DROP TABLE \(name)"
+    }
+}
+
+public struct AddColumn: DatabaseChange {
+    let table: String
+    let spec: FieldSpec
+
+    public init(to table: String, with spec: FieldSpec) {
+        self.table = table
+        self.spec = spec
+    }
+
+    public var forwardQuery: String {
+        return "ALTER TABLE \(table) ADD COLUMN \(spec.description)"
+    }
+
+    public var revertQuery: String? {
+        return "DROP COLUMN \(self.spec.name)"
+    }
+}
+
+public struct InsertRow: DatabaseChange {
+    let table: String
+    let values: [String]
+
+    public init(into table: String, values: [String]) {
+        self.table = table
+        self.values = values
+    }
+
+    public var forwardQuery: String {
+        var query = "INSERT INTO \(self.table) VALUES ("
+        query += self.values.joined(separator: ",")
+        query += ")"
+        return query
+    }
+
+    public var revertQuery: String? {
+        return nil
     }
 }
