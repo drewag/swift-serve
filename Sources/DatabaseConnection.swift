@@ -62,3 +62,78 @@ private extension DatabaseConnection {
         return self.connection
     }
 }
+
+
+extension ResultError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case let .badStatus(status, string):
+            var description = ""
+            switch status {
+            case .EmptyQuery:
+                description += "Empty Query"
+            case .CommandOK:
+                description += "Command OK"
+            case .TuplesOK:
+                description += "Tuples OK"
+            case .CopyOut:
+                description += "Copy Out"
+            case .CopyIn:
+                description += "Copy In"
+            case .BadResponse:
+                description += "Bad Response"
+            case .NonFatalError:
+                description += "Non Fatal Error"
+            case .FatalError:
+                description += "Fatal Error"
+            case .CopyBoth:
+                description += "Copy Both"
+            case .SingleTuple:
+                description += "Single Tuple"
+            case .Unknown:
+                description += "Unknown"
+            }
+            return "\(description): \(string)"
+        }
+    }
+}
+
+extension RowProtocolError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .expectedQualifiedField(let field):
+            return "Expected value for '\(field.qualifiedName)'"
+        case .unexpectedNilValue(let field):
+            return "Unexpected nil value for '\(field.qualifiedName)'"
+        }
+    }
+}
+
+extension RowProtocolError: ReportableResponseError {
+    public var status: HTTPStatus {
+        return .internalServerError
+    }
+
+    public var identifier: String? {
+        return "DatabaseError"
+    }
+
+    public var otherInfo: [String:String]? {
+        return nil
+    }
+}
+
+extension ResultError: ReportableResponseError {
+    public var status: HTTPStatus {
+        return .internalServerError
+    }
+
+    public var identifier: String? {
+        return "DatabaseError"
+    }
+
+    public var otherInfo: [String:String]? {
+        return nil
+    }
+}
+
