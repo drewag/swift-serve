@@ -2,6 +2,7 @@ import Foundation
 import SwiftPlusPlus
 
 public protocol Request: CustomStringConvertible {
+    var databaseConnection: DatabaseConnection {get}
     var method: HTTPMethod {get}
     var endpoint: URL {get}
     var data: Data {get}
