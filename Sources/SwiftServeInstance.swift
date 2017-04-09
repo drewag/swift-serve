@@ -49,10 +49,6 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
         }
     }
 
-    public var baseURL: URL {
-        return URL(string: "http://localhost:8080")!
-    }
-
     public init(
         domain: String,
         databaseChanges: [DatabaseChange],
