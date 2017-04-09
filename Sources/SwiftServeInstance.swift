@@ -23,17 +23,31 @@ public struct Scheme {
 }
 
 public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
+    public enum Environment {
+        case production
+        case development
+    }
+
     public let databaseChanges: [DatabaseChange]
     public let routes: [Route]
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
-    fileprivate let commandLineParser = Parser(arguments: CommandLine.arguments)
+    fileprivate let commandLineParser: Parser
     fileprivate let extraSchemes: [Scheme]
+    fileprivate let productionPromise: OptionPromise
 
     public let domain: String
-    public lazy var extraInfo = {
+    public fileprivate(set) lazy var extraInfo = {
         return SwiftServeInstance.loadExtraInfo()
     }()
+    public var environment: Environment {
+        if productionPromise.wasPresent {
+            return .production
+        }
+        else {
+            return .development
+        }
+    }
 
     public var baseURL: URL {
         return URL(string: "http://localhost:8080")!
@@ -47,6 +61,10 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
         extraSchemes: [Scheme] = []
         )
     {
+        let parser = Parser(arguments: CommandLine.arguments)
+        self.commandLineParser = parser
+        self.productionPromise = parser.option(named: "prod")
+
         self.databaseChanges = databaseChanges
         self.domain = domain
         self.routes = routes
@@ -68,7 +86,12 @@ public struct SwiftServeInstanceSpec {
 
 private extension SwiftServeInstance {
     var databaseName: String {
-        return self.domain.replacingOccurrences(of: ".", with: "_")
+        switch self.environment {
+        case .development:
+            return self.domain.replacingOccurrences(of: ".", with: "_") + "_dev"
+        case .production:
+            return self.domain.replacingOccurrences(of: ".", with: "_")
+        }
     }
 
     var databaseRole: String {
@@ -135,6 +158,8 @@ private extension SwiftServeInstance {
 
     func setupCommands() {
         self.commandLineParser.command(named: "info") { parser in
+            try parser.parse()
+
             let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
             let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes)
             let object = NativeTypesEncoder.objectFromEncodable(spec, mode: .saveLocally)
@@ -145,6 +170,8 @@ private extension SwiftServeInstance {
 
         self.commandLineParser.command(named: "db") { parser in
             parser.command(named: "recreate-role") { parser in
+                try parser.parse()
+
                 print("SET client_min_messages TO WARNING;")
                 print("DROP DATABASE IF EXISTS \(self.databaseName);")
                 print("DROP ROLE IF EXISTS \(self.databaseRole);")
@@ -152,6 +179,8 @@ private extension SwiftServeInstance {
             }
 
             parser.command(named: "recreate") { parser in
+                try parser.parse()
+
                 print("SET client_min_messages TO WARNING;")
                 print("DROP DATABASE IF EXISTS \(self.databaseName);")
                 print("CREATE DATABASE \(self.databaseName);")
