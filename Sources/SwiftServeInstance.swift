@@ -67,7 +67,6 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
         self.customizeCommandLineParser = customizeCommandLineParser
         self.extraSchemes = extraSchemes
 
-        self.loadDatabaseSetup()
         self.setupCommands()
         self.run()
     }
@@ -214,7 +213,7 @@ private extension SwiftServeInstance {
                 srandom(UInt32(Date().timeIntervalSince1970))
             #endif
 
-            print("Staring Server on \(port.parsedValue)...")
+            print("Staring Server on \(port.parsedValue) using database \(DatabaseSetup!.name)...")
             try S(port: port.parsedValue, router: self).start()
         }
 
@@ -223,7 +222,9 @@ private extension SwiftServeInstance {
 
     func run() {
         do {
-            try self.commandLineParser.parse()
+            try self.commandLineParser.parse(beforeExecute: {
+                self.loadDatabaseSetup()
+            })
         }
         catch {
             print("\(error)")
