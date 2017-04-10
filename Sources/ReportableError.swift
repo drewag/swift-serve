@@ -25,3 +25,13 @@ public struct UserReportableError: ReportableResponseError {
         self.description = description
     }
 }
+
+extension ReferenceError: ReportableResponseError {
+    public var status: HTTPStatus {
+        return .badRequest
+    }
+
+    public var identifier: String? {
+        return nil
+    }
+}
