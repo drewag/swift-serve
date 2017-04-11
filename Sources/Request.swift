@@ -21,11 +21,7 @@ extension Request {
     }
 
     public var baseURL: URL {
-        guard let host = self.headers["Host"] else {
-            return URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
-        }
-        return URL(string: "https://\(host)", relativeTo: nil)
-            ?? URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
+        return URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
     }
 
     public func decodableFromJson<Decodable: DecodableType>() throws -> Decodable? {
