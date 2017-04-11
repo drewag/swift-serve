@@ -23,6 +23,10 @@ extension Request {
         return self.response(withData: Data(), status: status, headers: headers)
     }
 
+    public func response(body: Data, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+        return self.response(withData: body, status: status, headers: headers)
+    }
+
     public func response(body: String, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
         let data = body.data(using: .utf8) ?? Data()
         return self.response(withData: data, status: status, headers: headers)
@@ -30,8 +34,7 @@ extension Request {
 
     public func response(json: EncodableType, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
         let object = NativeTypesEncoder.objectFromEncodable(json, mode: mode)
-        let data = try JSONSerialization.data(withJSONObject: object, options: JSONSerialization.WritingOptions())
-        return self.response(withData: data, status: status, headers: headers)
+        return try self.response(jsonFromNativeTypes: object, status: status, headers: headers)
     }
 
     public func response(redirectingTo to: String) -> Response {
@@ -45,8 +48,7 @@ extension Request {
             objectArray.append(NativeTypesEncoder.objectFromEncodable(value, mode: mode))
         }
 
-        let data = try JSONSerialization.data(withJSONObject: objectArray, options: JSONSerialization.WritingOptions())
-        return self.response(withData: data, status: status, headers: headers)
+        return try self.response(jsonFromNativeTypes: objectArray, status: status, headers: headers)
     }
 
     public func response(json: [String:EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
@@ -56,7 +58,11 @@ extension Request {
             objectDict[key] = NativeTypesEncoder.objectFromEncodable(value, mode: mode)
         }
 
-        let data = try JSONSerialization.data(withJSONObject: objectDict, options: JSONSerialization.WritingOptions())
+        return try self.response(jsonFromNativeTypes: objectDict, status: status, headers: headers)
+    }
+
+    public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+        let data = try JSONSerialization.data(withJSONObject: object, options: JSONSerialization.WritingOptions())
         return self.response(withData: data, status: status, headers: headers)
     }
 
