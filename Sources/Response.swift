@@ -32,38 +32,40 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: EncodableType, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        let object = NativeTypesEncoder.objectFromEncodable(json, mode: mode)
-        return try self.response(jsonFromNativeTypes: object, status: status, headers: headers)
+    public func response(json: EncodableType, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+        return self.response(
+            withData: JSON.encode(json, mode: mode),
+            status: status,
+            headers: headers
+        )
     }
 
     public func response(redirectingTo to: String) -> Response {
         return self.response(status: .movedPermanently, headers: ["Location": "\(to)"])
     }
 
-    public func response(json: [EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        var objectArray = [Any]()
-
-        for value in json {
-            objectArray.append(NativeTypesEncoder.objectFromEncodable(value, mode: mode))
-        }
-
-        return try self.response(jsonFromNativeTypes: objectArray, status: status, headers: headers)
+    public func response(json: [EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+        return self.response(
+            withData: JSON.encode(json, mode: mode),
+            status: status,
+            headers: headers
+        )
     }
 
-    public func response(json: [String:EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        var objectDict = [String:Any]()
-
-        for (key, value) in json {
-            objectDict[key] = NativeTypesEncoder.objectFromEncodable(value, mode: mode)
-        }
-
-        return try self.response(jsonFromNativeTypes: objectDict, status: status, headers: headers)
+    public func response(json: [String:EncodableType], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+        return self.response(
+            withData: JSON.encode(json, mode: mode),
+            status: status,
+            headers: headers
+        )
     }
 
     public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        let data = try JSONSerialization.data(withJSONObject: object, options: JSONSerialization.WritingOptions())
-        return self.response(withData: data, status: status, headers: headers)
+        return self.response(
+            withData: try JSON.encode(object),
+            status: status,
+            headers: headers
+        )
     }
 
     public func response(htmlFromFile fileUrl: URL, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
