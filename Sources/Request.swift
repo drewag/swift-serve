@@ -1,7 +1,7 @@
 import Foundation
 import SwiftPlusPlus
 
-public protocol Request: CustomStringConvertible {
+public protocol Request: CustomStringConvertible, ErrorGenerating {
     var databaseConnection: DatabaseConnection {get}
     var method: HTTPMethod {get}
     var endpoint: URL {get}
@@ -24,20 +24,20 @@ extension Request {
         return URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
     }
 
-    public func decodableFromJson<Decodable: DecodableType>() throws -> Decodable? {
+    public func decodableFromJson<Value: Decodable>() throws -> Value? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
         return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
     }
 
-    public func decodableFromJsonArray<Decodable: DecodableType>() throws -> [Decodable]? {
+    public func decodableFromJsonArray<Value: Decodable>() throws -> [Value]? {
         guard let objectArray = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [Any] else {
             return nil
         }
 
-        var array = [Decodable]()
+        var array = [Value]()
 
         for object in objectArray {
-            if let decodable: Decodable = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote) {
+            if let decodable: Value = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote) {
                 array.append(decodable)
             }
         }
@@ -45,12 +45,12 @@ extension Request {
         return array
     }
 
-    public func decodableFromJsonDict<Decodable: DecodableType>() throws -> [String:Decodable]? {
+    public func decodableFromJsonDict<Value: Decodable>() throws -> [String:Value]? {
         guard let objectDict = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [String:Any] else {
             return nil
         }
 
-        var dict = [String:Decodable]()
+        var dict = [String:Value]()
 
         for (key, object) in objectDict {
             dict[key] = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)

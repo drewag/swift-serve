@@ -22,7 +22,7 @@ public struct Scheme {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
+public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public enum Environment {
         case production
         case development
@@ -232,7 +232,7 @@ private extension SwiftServeInstance {
     }
 }
 
-extension SwiftServeInstanceSpec: CodableType {
+extension SwiftServeInstanceSpec: Codable {
     struct Keys {
         class version: CoderKey<String> {}
         class domain: CoderKey<String> {}
@@ -240,7 +240,7 @@ extension SwiftServeInstanceSpec: CodableType {
         class extraSchemes: CoderKey<Scheme> {}
     }
 
-    public init(decoder: DecoderType) throws {
+    public init(decoder: Decoder) throws {
         let versionString = try decoder.decode(Keys.version.self)
         let components = versionString.components(separatedBy: ".")
         self.version = (Int(components[0])!, Int(components[1])!)
@@ -249,7 +249,7 @@ extension SwiftServeInstanceSpec: CodableType {
         self.extraSchemes = try decoder.decodeArray(Keys.extraSchemes.self)
     }
 
-    public func encode(_ encoder: EncoderType) {
+    public func encode(_ encoder: Encoder) {
         encoder.encode("\(self.version.major).\(self.version.minor)", forKey: Keys.version.self)
         encoder.encode(self.domain, forKey: Keys.domain.self)
         encoder.encode(self.extraInfoSpec, forKey: Keys.extraInfoSpec.self)
@@ -257,18 +257,18 @@ extension SwiftServeInstanceSpec: CodableType {
     }
 }
 
-extension Scheme: CodableType {
+extension Scheme: Codable {
     struct Keys {
         class name: CoderKey<String> {}
         class arguments: CoderKey<String> {}
     }
 
-    public init(decoder: DecoderType) throws {
+    public init(decoder: Decoder) throws {
         self.name = try decoder.decode(Keys.name.self)
         self.arguments = try decoder.decodeArray(Keys.arguments.self)
     }
 
-    public func encode(_ encoder: EncoderType) {
+    public func encode(_ encoder: Encoder) {
         encoder.encode(self.name, forKey: Keys.name.self)
         encoder.encode(self.arguments, forKey: Keys.arguments.self)
     }

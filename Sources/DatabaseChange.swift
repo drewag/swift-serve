@@ -6,12 +6,14 @@
 //
 //
 
+import SQL
+
 public protocol DatabaseChange {
     var forwardQuery: String {get}
     var revertQuery: String? {get}
 }
 
-public struct Reference {
+public struct FieldReference {
     public enum Action: String {
         case none = "NO ACTION"
         case cascade = "CASCADE"
@@ -24,11 +26,19 @@ public struct Reference {
     let onDelete: Action
     let onUpdate: Action
 
-    public init(table: String, field: String, onDelete: Action = .none, onUpdate: Action = .none) {
+    init(table: String, field: String, onDelete: Action = .none, onUpdate: Action = .none) {
         self.table = table
         self.field = field
         self.onDelete = onDelete
         self.onUpdate = onUpdate
+    }
+
+    public static func field(_ field: String, in table: String, onDelete: Action = .none, onUpdate: Action = .none) -> FieldReference {
+        return FieldReference(table: table, field: field, onDelete: onDelete, onUpdate: onUpdate)
+    }
+
+    public static func field<Field: TableField>(_ field: Field, onDelete: Action = .none, onUpdate: Action = .none) -> FieldReference where Field.RawValue == String {
+        return self.field(field.rawValue, in: Field.tableName, onDelete: onDelete, onUpdate: onUpdate)
     }
 }
 
@@ -76,9 +86,9 @@ public struct FieldSpec: CustomStringConvertible {
     let isUnique: Bool
     let isPrimaryKey: Bool
     let type: DataType
-    let references: Reference?
+    let references: FieldReference?
 
-    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: Reference? = nil) {
+    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: FieldReference? = nil) {
         self.name = name
         self.type = type
         self.allowNull = allowNull

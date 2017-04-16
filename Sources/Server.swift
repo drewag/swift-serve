@@ -7,8 +7,9 @@
 //
 
 import Foundation
+import SwiftPlusPlus
 
-public protocol Server {
+public protocol Server: ErrorGenerating {
     var extraLogForRequest: ((Request) -> String?)? {get set}
 
     init(port: Int, router: Router) throws
@@ -36,20 +37,21 @@ extension Server {
             return string.replacingOccurrences(of: "\"", with: "\\\"")
         }
 
-        var json = "{"
-        switch error {
-        case let error as ReportableResponseError:
-            json += "\"message\":\"\(escape(error.description))\""
+        let reportableError = self.error("handling request", from: error)
+
+        let status: HTTPStatus
+        switch reportableError {
+        case let networkError as NetworkRequestError:
+            status = networkError.status
         default:
-            json += "\"message\":\"\(escape(error.localizedDescription))\""
-        }
-        if let error = error as? ReportableResponseError {
-            json += ",\"identifier\":\"\(escape(error.identifier ?? "other"))\""
-            for (field, value) in error.otherInfo ?? [:] {
-                json += ",\"\(escape(field))\":\"\(escape(value))\""
+            switch reportableError.perpetrator {
+            case .system, .temporaryEnvironment:
+                status = .internalServerError
+            case .user:
+                status = .badRequest
             }
         }
-        json += "}"
-        return request.response(body: json, status: (error as? ReportableResponseError)?.status ?? .internalServerError)
+
+        return request.response(json: reportableError, mode: .update, status: status)
     }
 }

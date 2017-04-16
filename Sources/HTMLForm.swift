@@ -7,12 +7,14 @@
 //
 
 import TextTransformers
+import SwiftPlusPlus
 
 public protocol HTMLFormField: RawRepresentable, Hashable {
+    static var action: String {get}
     static var all: [Self] {get}
 }
 
-public class HTMLForm<Field: HTMLFormField> where Field.RawValue == String {
+public class HTMLForm<Field: HTMLFormField>: ErrorGenerating where Field.RawValue == String {
     fileprivate var fields: [Field:String]
     fileprivate var error: String? = nil
     fileprivate var response: ResponseStatus? = nil
@@ -28,7 +30,7 @@ public class HTMLForm<Field: HTMLFormField> where Field.RawValue == String {
 
     public func requiredValue(for field: Field) throws -> String {
         guard let value = self.value(for: field) else {
-            throw UserReportableError(.badRequest, "\(self.display(for: field)) is required")
+            throw self.error("parsing form", because: "\(self.display(for: field)) is required")
         }
         return value
     }
@@ -76,7 +78,11 @@ extension Request {
         switch self.method {
         case .post:
             do {
-                form.response = try process(form)
+                try form.executeWhileRephrasingErrors(as: Field.action) {
+                    try form.executeWhileReattributingErrors(to: .user) {
+                        form.response = try process(form)
+                    }
+                }
             }
             catch let error {
                 form.error = "\(error)"

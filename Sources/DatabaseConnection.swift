@@ -7,6 +7,7 @@
 //
 
 import PostgreSQL
+import SwiftPlusPlus
 
 public struct DatabaseSpec {
     let name: String
@@ -109,31 +110,60 @@ extension RowProtocolError: CustomStringConvertible {
     }
 }
 
-extension RowProtocolError: ReportableResponseError {
-    public var status: HTTPStatus {
-        return .internalServerError
+extension RowProtocolError: ReportableError, ErrorGenerating {
+    public var perpetrator: ErrorPerpitrator {
+        return .system
     }
 
-    public var identifier: String? {
-        return "DatabaseError"
+    public var doing: String {
+        return "loading value from database"
     }
 
-    public var otherInfo: [String:String]? {
-        return nil
+    public var reason: AnyErrorReason {
+        switch self {
+        case .expectedQualifiedField(let field):
+            return ErrorReason("there is no column for '\(field)'")
+        case .unexpectedNilValue(let field):
+            return ErrorReason("'\(field)' is null")
+        }
+    }
+
+    public var source: ErrorGenerating.Type {
+        return type(of: self)
     }
 }
 
-extension ResultError: ReportableResponseError {
-    public var status: HTTPStatus {
-        return .internalServerError
+extension ResultError: ReportableError, ErrorGenerating {
+    public var perpetrator: ErrorPerpitrator {
+        return .system
     }
 
-    public var identifier: String? {
-        return "DatabaseError"
+    public var doing: String {
+        return "executing database query"
     }
 
-    public var otherInfo: [String:String]? {
-        return nil
+    public var reason: AnyErrorReason {
+        switch self {
+        case .badStatus(let status, let message):
+            switch status {
+            case .EmptyQuery:
+                return ErrorReason("query was empty")
+            case .CommandOK, .TuplesOK, .CopyOut, .CopyIn, .CopyBoth, .SingleTuple:
+                return ErrorReason("query had no error")
+            case .BadResponse:
+                return ErrorReason("query had bad response: \(message)")
+            case .NonFatalError:
+                return ErrorReason("query had non-fatal error: \(message)")
+            case .FatalError:
+                return ErrorReason("query had fatal error: \(message)")
+            case .Unknown:
+                return ErrorReason("query had unknown error: \(message)")
+            }
+        }
+    }
+
+    public var source: ErrorGenerating.Type {
+        return type(of: self)
     }
 }
 
