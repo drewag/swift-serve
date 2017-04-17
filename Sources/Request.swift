@@ -24,6 +24,10 @@ extension Request {
         return URL(string: "/", relativeTo: self.endpoint)!.absoluteURL
     }
 
+    public var contentType: ContentType {
+        return ContentType(self.headers["Content-Type"])
+    }
+
     public func decodableFromJson<Value: Decodable>() throws -> Value? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
         return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
@@ -80,24 +84,7 @@ extension Request {
         }
 
         if let string = self.string {
-            for pair in string.components(separatedBy: "&") {
-                let components = pair.components(separatedBy: "=")
-                guard components.count == 2 else {
-                    continue
-                }
-
-                func unencode(_ string: String) -> String? {
-                    let withSpaces = string.replacingOccurrences(of: "+", with: " ")
-                    return withSpaces.removingPercentEncoding
-                }
-                guard let key = unencode(components[0]) else {
-                    continue
-                }
-                guard let value = unencode(components[1]) else {
-                    continue
-                }
-                output[key] = value
-            }
+            output.append(string, parsedWith: FormUrlEncoded.self)
         }
 
         return output
@@ -108,6 +95,20 @@ extension Request {
         let value = value.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlFragmentAllowed)!
         let date = Date(timeIntervalSinceNow: maxAge)
         return "\(key)=\(value); Expires=\(date.gmtDateTime)"
+    }
+
+    public func part(named: String) -> MultiFormPart? {
+        switch self.contentType {
+        case .multipartFormData(let boundary):
+            for part in MultiFormPart.parts(in: self.data, usingBoundary: boundary) {
+                if part.name == named {
+                    return part
+                }
+            }
+            return nil
+        default:
+            return nil
+        }
     }
 }
 
