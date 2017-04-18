@@ -4,6 +4,7 @@ import TextTransformers
 
 public protocol Response: CustomStringConvertible {
     var status: HTTPStatus {get}
+    var headers: [String:String] {get set}
 }
 
 extension Request {

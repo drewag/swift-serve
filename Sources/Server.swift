@@ -11,6 +11,7 @@ import SwiftPlusPlus
 
 public protocol Server: ErrorGenerating {
     var extraLogForRequest: ((Request) -> String?)? {get set}
+    var postProcessResponse: ((inout Response) -> ())? {get set}
 
     init(port: Int, router: Router) throws
     init(port: Int, router: Router, certificatePath: String, privateKeyPath: String) throws

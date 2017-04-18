@@ -30,6 +30,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     public let databaseChanges: [DatabaseChange]
     public let routes: [Route]
+    public let allowCrossOriginRequests: Bool
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
@@ -51,6 +52,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     public init(
         domain: String,
+        allowCrossOriginRequests: Bool = false,
         databaseChanges: [DatabaseChange],
         routes: [Route],
         customizeCommandLineParser: ((Parser) -> ())? = nil,
@@ -60,6 +62,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         let parser = Parser(arguments: CommandLine.arguments)
         self.commandLineParser = parser
         self.productionPromise = parser.option(named: "prod")
+        self.allowCrossOriginRequests = allowCrossOriginRequests
 
         self.databaseChanges = databaseChanges
         self.domain = domain
@@ -214,7 +217,15 @@ private extension SwiftServeInstance {
             #endif
 
             print("Staring Server on \(port.parsedValue) using database \(DatabaseSetup!.name)...")
-            try S(port: port.parsedValue, router: self).start()
+            var server = try S(port: port.parsedValue, router: self)
+            if self.allowCrossOriginRequests {
+                server.postProcessResponse = { response in
+                    response.headers["Access-Control-Allow-Origin"] = "*"
+                    response.headers["Access-Control-Allow-Methods"] = "POST, PUT, GET, HEAD, DELETE, OPTIONS"
+                    response.headers["Access-Control-Allow-Headers"] = "Access-Control-Request-Headers"
+                }
+            }
+            try server.start()
         }
 
         self.customizeCommandLineParser?(self.commandLineParser)
