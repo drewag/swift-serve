@@ -109,7 +109,7 @@ struct AllPathComponent: PathComponent {
     let method: HTTPMethod
 
     func matches(path: String, using method: HTTPMethod) -> Bool {
-        guard method.matches(method) else {
+        guard method.matches(self.method) else {
             return false
         }
         return true

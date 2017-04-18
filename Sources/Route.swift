@@ -141,12 +141,38 @@ extension Route {
     }
 
     public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
-        return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+        return VariableRouterRoute<R>(method: .delete, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.deleteWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func options(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
+        return FixedHandlerRoute(path, method: .options, handler: handler)
+    }
+
+    public static func options(_ path: String? = nil, router: Router) -> Route {
+        return FixedRouterRoute(path, method: .options, router: router)
+    }
+
+    public static func options(_ path: String? = nil, subRoutes: [Route]) -> Route {
+        let router = InPlaceRouter(routes: subRoutes)
+        return self.options(path, router: router)
+    }
+
+    public static func optionsWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
+        return VariableRoute<Param>(method: .options, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
+    }
+
+    public static func optionsWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
+        return VariableRouterRoute<R>(method: .options, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func optionsWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.optionsWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 }
 

@@ -148,6 +148,32 @@ extension ParameterizedRoute {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.deleteWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
+
+    public static func options(_ path: String? = nil, handler: @escaping (Request, Param) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
+        return FixedHandlerRoute(path, method: .options, handler: handler)
+    }
+
+    public static func options<R: ParameterizedRouter>(_ path: String? = nil, router: R) -> ParameterizedRoute<Param> where R.Param == Param {
+        return FixedRouterRoute(path, method: .options, router: router)
+    }
+
+    public static func options<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.options(path, router: router)
+    }
+
+    public static func optionsWithParam<NextParam: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, (Param, NextParam)) throws -> ResponseStatus) -> ParameterizedRoute<Param> {
+        return VariableHandlerRoute(method: .options, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
+    }
+
+    public static func optionsWithParam<R: ParameterizedRouter, NextParam: CapturableType>(consumeEntireSubPath: Bool, router: R) -> ParameterizedRoute<Param> where R.Param == (Param, NextParam) {
+        return VariableRouterRoute(method: .options, consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
+
+    public static func optionsWithParam<NextParam: CapturableType>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<(Param, NextParam)>]) -> ParameterizedRoute<Param> {
+        let router = InPlaceParameterizedRouter(routes: subRoutes)
+        return self.optionsWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
+    }
 }
 
 fileprivate class FixedHandlerRoute<Param>: ParameterizedRoute<Param> {
