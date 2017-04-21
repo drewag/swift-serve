@@ -164,6 +164,32 @@ public struct FieldSpec: CustomStringConvertible {
     }
 }
 
+public struct UpdateTable: DatabaseChange {
+    let name: String
+    let updates: [String:ValueKind]
+
+    public init(name: String, updates: [String:ValueKind]) {
+        self.name = name
+        self.updates = updates
+    }
+
+    public var forwardQuery: String {
+        let updates = self.updates.map({ (column, value) in
+            switch value {
+            case .calculated(let caculated):
+                return "\(column) = \(caculated)"
+            case .string(let string):
+                return "\(column) = '\(string)'"
+            case .subcommand(let subcommand):
+                return "\(column) = (\(subcommand))"
+            }
+        }).joined(separator: ", ")
+        return "UPDATE \(name) SET \(updates)"
+    }
+
+    public let revertQuery: String? = nil
+}
+
 public struct CreateTable: DatabaseChange {
     let name: String
     let fields: [FieldSpec]
