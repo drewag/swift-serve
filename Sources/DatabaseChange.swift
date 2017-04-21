@@ -57,6 +57,12 @@ public struct Constraint: CustomStringConvertible {
     }
 }
 
+public enum ValueKind {
+    case calculated(String)
+    case string(String)
+    case subcommand(String)
+}
+
 public struct FieldSpec: CustomStringConvertible {
     public enum DataType {
         case string(length: Int?)
@@ -77,25 +83,28 @@ public struct FieldSpec: CustomStringConvertible {
     let isPrimaryKey: Bool
     let type: DataType
     let references: Reference?
+    let defaultValue: ValueKind?
 
-    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: Reference? = nil) {
+    public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: Reference? = nil, default: ValueKind? = nil) {
         self.name = name
         self.type = type
         self.allowNull = allowNull
         self.isUnique = isUnique
         self.isPrimaryKey = false
         self.references = references
+        self.defaultValue = `default`
     }
 
     public init(name: String, type: DataType, isPrimaryKey: Bool) {
         self.name = name
         self.type = type
         self.isPrimaryKey = isPrimaryKey
-        self.references = nil
 
         // Setting these will mean they won't be added to the command
         self.allowNull = true
         self.isUnique = false
+        self.defaultValue = nil
+        self.references = nil
     }
 
     public var description: String {
@@ -135,6 +144,17 @@ public struct FieldSpec: CustomStringConvertible {
         }
         if !self.allowNull {
             description += " NOT NULL"
+        }
+        if let defaultValue = self.defaultValue {
+            description += " DEFAULT "
+            switch defaultValue {
+            case .calculated(let calculated):
+                description += calculated
+            case .string(let string):
+                description += "'\(string)'"
+            case .subcommand(let subcommand):
+                description += "(\(subcommand))"
+            }
         }
         if let references = self.references {
             description += " REFERENCES \(references.table)(\(references.field))"
