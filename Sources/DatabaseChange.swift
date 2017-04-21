@@ -164,6 +164,22 @@ public struct FieldSpec: CustomStringConvertible {
     }
 }
 
+public struct CreateSequence: DatabaseChange {
+    let name: String
+
+    public init(name: String) {
+        self.name = name
+    }
+
+    public var forwardQuery: String {
+        return "CREATE SEQUENCE \(name)"
+    }
+
+    public var revertQuery: String? {
+        return "DROP SEQUENCE \(name)"
+    }
+}
+
 public struct UpdateTable: DatabaseChange {
     let name: String
     let updates: [String:ValueKind]
