@@ -193,10 +193,16 @@ private extension SwiftServeInstance {
 
                 let connection = DatabaseConnection()
                 let currentVersion = try SwiftServe.getVersion(from: connection)
+                var newVersion = currentVersion
+
+                defer {
+                    let _ = try? SwiftServe.updateVersion(to: newVersion, in: connection)
+                }
+
                 for index in currentVersion ..< self.databaseChanges.count {
                     let _ = try connection.execute(self.databaseChanges[index].forwardQuery)
+                    newVersion += 1
                 }
-                try SwiftServe.updateVersion(to: self.databaseChanges.count, in: connection)
             }
             try parser.parse()
         }
