@@ -68,7 +68,17 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
-        self.run()
+    }
+
+    public func run() {
+        do {
+            try self.commandLineParser.parse(beforeExecute: {
+                self.loadDatabaseSetup()
+            })
+        }
+        catch {
+            print("\(error)")
+        }
     }
 }
 
@@ -224,17 +234,6 @@ private extension SwiftServeInstance {
         }
 
         self.customizeCommandLineParser?(self.commandLineParser)
-    }
-
-    func run() {
-        do {
-            try self.commandLineParser.parse(beforeExecute: {
-                self.loadDatabaseSetup()
-            })
-        }
-        catch {
-            print("\(error)")
-        }
     }
 }
 
