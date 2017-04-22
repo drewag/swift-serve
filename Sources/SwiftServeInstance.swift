@@ -37,9 +37,16 @@ public class SwiftServeInstance<S: Server, ExtraInfo: CodableType>: Router {
     fileprivate let productionPromise: OptionPromise
 
     public let domain: String
-    public fileprivate(set) lazy var extraInfo = {
-        return SwiftServeInstance.loadExtraInfo()
-    }()
+    private var loadedExtraInfo: ExtraInfo?
+    public var extraInfo: ExtraInfo {
+        guard let loadedExtraInfo = self.loadedExtraInfo else {
+            let loaded = SwiftServeInstance.loadExtraInfo(for: self.environment)
+            self.loadedExtraInfo = loaded
+            return loaded
+        }
+
+        return loadedExtraInfo
+    }
     public var environment: Environment {
         if productionPromise.wasPresent {
             return .production
@@ -104,8 +111,14 @@ private extension SwiftServeInstance {
             + "_service"
     }
 
-    static func loadDatabasePassword() -> String {
-        let filePath = "database_password.string"
+    static func loadDatabasePassword(for environment: Environment) -> String {
+        var filePath = "database_password.string"
+        switch environment {
+        case .development:
+            filePath = "dev_\(filePath)"
+        case .production:
+            break
+        }
         if let string = try? filePath.map(FileContents()).string()
             , !string.isEmpty
         {
@@ -130,8 +143,14 @@ private extension SwiftServeInstance {
         return password
     }
 
-    static func loadExtraInfo() -> ExtraInfo {
-        let filePath = "extra_info.json"
+    static func loadExtraInfo(for environment: Environment) -> ExtraInfo {
+        var filePath = "extra_info.json"
+        switch environment {
+        case .development:
+            filePath = "dev_\(filePath)"
+        case .production:
+            break
+        }
         if let string = try? filePath.map(FileContents()).string()
             , let data = string.data(using: .utf8)
             , let object = try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
@@ -157,7 +176,7 @@ private extension SwiftServeInstance {
         DatabaseSetup = DatabaseSpec(
             name: self.databaseName,
             username: self.databaseRole,
-            password: SwiftServeInstance.loadDatabasePassword()
+            password: SwiftServeInstance.loadDatabasePassword(for: self.environment)
         )
     }
 
