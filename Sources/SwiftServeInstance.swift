@@ -38,9 +38,16 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate let productionPromise: OptionPromise
 
     public let domain: String
-    public fileprivate(set) lazy var extraInfo = {
-        return SwiftServeInstance.loadExtraInfo()
-    }()
+    private var loadedExtraInfo: ExtraInfo?
+    public var extraInfo: ExtraInfo {
+        guard let loadedExtraInfo = self.loadedExtraInfo else {
+            let loaded = SwiftServeInstance.loadExtraInfo(for: self.environment)
+            self.loadedExtraInfo = loaded
+            return loaded
+        }
+
+        return loadedExtraInfo
+    }
     public var environment: Environment {
         if productionPromise.wasPresent {
             return .production
@@ -71,7 +78,17 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
-        self.run()
+    }
+
+    public func run() {
+        do {
+            try self.commandLineParser.parse(beforeExecute: {
+                self.loadDatabaseSetup()
+            })
+        }
+        catch {
+            print("\(error)")
+        }
     }
 }
 
@@ -97,8 +114,14 @@ private extension SwiftServeInstance {
             + "_service"
     }
 
-    static func loadDatabasePassword() -> String {
-        let filePath = "database_password.string"
+    static func loadDatabasePassword(for environment: Environment) -> String {
+        var filePath = "database_password.string"
+        switch environment {
+        case .development:
+            filePath = "dev_\(filePath)"
+        case .production:
+            break
+        }
         if let string = try? filePath.map(FileContents()).string()
             , !string.isEmpty
         {
@@ -123,8 +146,14 @@ private extension SwiftServeInstance {
         return password
     }
 
-    static func loadExtraInfo() -> ExtraInfo {
-        let filePath = "extra_info.json"
+    static func loadExtraInfo(for environment: Environment) -> ExtraInfo {
+        var filePath = "extra_info.json"
+        switch environment {
+        case .development:
+            filePath = "dev_\(filePath)"
+        case .production:
+            break
+        }
         if let string = try? filePath.map(FileContents()).string()
             , let data = string.data(using: .utf8)
             , let object = try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
@@ -150,7 +179,7 @@ private extension SwiftServeInstance {
         DatabaseSetup = DatabaseSpec(
             name: self.databaseName,
             username: self.databaseRole,
-            password: SwiftServeInstance.loadDatabasePassword()
+            password: SwiftServeInstance.loadDatabasePassword(for: self.environment)
         )
     }
 
@@ -196,10 +225,16 @@ private extension SwiftServeInstance {
 
                 let connection = DatabaseConnection()
                 let currentVersion = try SwiftServe.getVersion(from: connection)
+                var newVersion = currentVersion
+
+                defer {
+                    let _ = try? SwiftServe.updateVersion(to: newVersion, in: connection)
+                }
+
                 for index in currentVersion ..< self.databaseChanges.count {
                     let _ = try connection.execute(self.databaseChanges[index].forwardQuery)
+                    newVersion += 1
                 }
-                try SwiftServe.updateVersion(to: self.databaseChanges.count, in: connection)
             }
             try parser.parse()
         }
@@ -229,17 +264,6 @@ private extension SwiftServeInstance {
         }
 
         self.customizeCommandLineParser?(self.commandLineParser)
-    }
-
-    func run() {
-        do {
-            try self.commandLineParser.parse(beforeExecute: {
-                self.loadDatabaseSetup()
-            })
-        }
-        catch {
-            print("\(error)")
-        }
     }
 }
 
