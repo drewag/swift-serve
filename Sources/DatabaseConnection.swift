@@ -131,6 +131,10 @@ extension RowProtocolError: ReportableError, ErrorGenerating {
     public var source: ErrorGenerating.Type {
         return type(of: self)
     }
+
+    public func encode(_ encoder: Encoder) {
+        self.encodeStandard(encoder)
+    }
 }
 
 extension ResultError: ReportableError, ErrorGenerating {
@@ -164,6 +168,10 @@ extension ResultError: ReportableError, ErrorGenerating {
 
     public var source: ErrorGenerating.Type {
         return type(of: self)
+    }
+
+    public func encode(_ encoder: Encoder) {
+        self.encodeStandard(encoder)
     }
 }
 

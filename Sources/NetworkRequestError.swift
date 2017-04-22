@@ -42,3 +42,14 @@ extension Request {
         return NetworkRequestError(doing, withStatus: status, because: because, from: type(of: self))
     }
 }
+
+extension NetworkRequestError {
+    struct Keys {
+        class status: CoderKey<Int> {}
+    }
+
+    func encode(_ encoder: Encoder) {
+        self.encodeStandard(encoder)
+        encoder.encode(self.status.rawValue, forKey: Keys.status.self)
+    }
+}
