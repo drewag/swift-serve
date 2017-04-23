@@ -6,8 +6,10 @@
 //
 //
 
-struct FormUrlEncoded: StringKeyValueParser {
-    static func parse(_ string: String) -> [String:String] {
+import Foundation
+
+public struct FormUrlEncoded: StringKeyValueParser {
+    public static func parse(_ string: String) -> [String:String] {
         var output = [String:String]()
 
         for pair in string.components(separatedBy: "&") {
@@ -28,6 +30,24 @@ struct FormUrlEncoded: StringKeyValueParser {
                 continue
             }
             output[key] = value
+        }
+
+        return output
+    }
+
+    public static func encode(_ data: [String:String]) -> String {
+        var output = ""
+
+        let characterSet = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789–_.~")
+        func escape(_ string: String) -> String {
+            return string.addingPercentEncoding(withAllowedCharacters: characterSet) ?? ""
+        }
+
+        for (key, value) in data {
+            if !output.isEmpty {
+                output += "&"
+            }
+            output += "\(escape(key))=\(escape(value))"
         }
 
         return output
