@@ -34,10 +34,6 @@ extension Server {
     }
 
     public func response(for error: Error, from request: Request) -> Response {
-        func escape(_ string: String) -> String {
-            return string.replacingOccurrences(of: "\"", with: "\\\"")
-        }
-
         let reportableError = self.error("handling request", from: error)
 
         let status: HTTPStatus
@@ -53,6 +49,28 @@ extension Server {
             }
         }
 
-        return request.response(json: reportableError, mode: .update, status: status)
+        if request.accepts(.html),
+            let htmlResponse = (try? request.response(
+                htmlFromFiles: [
+                    "Views/Template/Header.html",
+                    "Views/Error.html",
+                    "Views/Template/Footer.html",
+                ],
+                status: status,
+                htmlBuild: { builder in
+                    builder["title"] = "Error Occured"
+                    builder["message"] = reportableError.description
+                    builder["doing"] = reportableError.doing
+                    builder["reason"] = reportableError.reason.because
+                    builder["alert_title"] = reportableError.alertDescription.title
+                    builder["alert_message"] = reportableError.alertDescription.message
+                }
+            ))
+        {
+            return htmlResponse
+        }
+        else {
+            return request.response(json: reportableError, mode: .update, status: status)
+        }
     }
 }
