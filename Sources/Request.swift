@@ -28,6 +28,14 @@ extension Request {
         return ContentType(self.headers["Content-Type"])
     }
 
+    var accepts: [ContentType] {
+        return ContentType.types(from: self.headers["Accept"])
+    }
+
+    public func accepts(_ contentType: ContentType) -> Bool {
+        return self.accepts.contains(where: {$0 == contentType})
+    }
+
     public func decodableFromJson<Value: Decodable>() throws -> Value? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
         return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
