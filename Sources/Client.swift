@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SwiftPlusPlus
+import Swiftlier
 
 public protocol ClientRequest {
     init(method: HTTPMethod, url: URL, headers: [String:String], username: String?, password: String?, body: String)

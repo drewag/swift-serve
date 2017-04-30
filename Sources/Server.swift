@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SwiftPlusPlus
+import Swiftlier
 
 public protocol Server: ErrorGenerating {
     var extraLogForRequest: ((Request) -> String?)? {get set}

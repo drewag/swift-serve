@@ -7,7 +7,7 @@
 //
 
 import TextTransformers
-import SwiftPlusPlus
+import Swiftlier
 
 public protocol HTMLFormField: RawRepresentable, Hashable {
     static var action: String {get}

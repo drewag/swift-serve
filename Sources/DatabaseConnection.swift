@@ -7,7 +7,7 @@
 //
 
 import PostgreSQL
-import SwiftPlusPlus
+import Swiftlier
 
 public struct DatabaseSpec {
     let name: String

@@ -1,5 +1,5 @@
 import Foundation
-import SwiftPlusPlus
+import Swiftlier
 
 public protocol Request: CustomStringConvertible, ErrorGenerating {
     var databaseConnection: DatabaseConnection {get}

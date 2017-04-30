@@ -7,7 +7,7 @@
 //
 
 import CommandLineParser
-import SwiftPlusPlus
+import Swiftlier
 import Foundation
 import TextTransformers
 import SQL
