@@ -67,19 +67,22 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
     }
 
     @discardableResult
-    public func send<Subscribable: SubscribableEmail>(_ email: Subscribable, to subscriber: Subscribable.Subscriber, for request: Request) throws -> HTML? {
-        guard let token = try self.token(for: subscriber, to: email, using: request.databaseConnection) else {
-            return nil
-        }
+    public func send<Subscribable: SubscribableEmail>(_ email: Subscribable, to subscriber: Subscribable.Subscriber, for request: Request) throws -> HTML {
+        let token = try self.token(for: subscriber, to: email, using: request.databaseConnection)
 
         let html = try type(of: email).templatePath.url.relativePath
             .map(FileContents())
             .map(Template(build: { builder in
                 builder["base_url"] = request.baseURL.absoluteString
-                builder["unsubscribe_token"] = token.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
+                builder["unsubscribe_token"] = token?.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
                 email.build(with: builder)
             }))
             .string()
+
+        guard token != nil else {
+            return html
+        }
+
         Email(
             to: subscriber.email.string,
             subject: email.subject,
