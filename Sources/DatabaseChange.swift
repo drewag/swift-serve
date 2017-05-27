@@ -85,6 +85,7 @@ public struct FieldSpec: CustomStringConvertible {
         case serial
         case integer
         case double
+        case uuid
     }
 
     let name: String
@@ -145,6 +146,8 @@ public struct FieldSpec: CustomStringConvertible {
             description += "double precision"
         case .interval:
             description += "interval"
+        case .uuid:
+            description += "uuid"
         }
         if isPrimaryKey {
             description += " PRIMARY KEY"
@@ -307,7 +310,25 @@ public struct AddColumn: DatabaseChange {
     }
 
     public var revertQuery: String? {
-        return "DROP COLUMN \(self.spec.name)"
+        return "ALTER TABLE \(table) DROP COLUMN \(self.spec.name)"
+    }
+}
+
+public struct RemoveColumn: DatabaseChange {
+    let table: String
+    let name: String
+
+    public init(from table: String, named name: String) {
+        self.table = table
+        self.name = name
+    }
+
+    public var forwardQuery: String {
+        return "ALTER TABLE \(table) DROP COLUMN \(name)"
+    }
+
+    public var revertQuery: String? {
+        return nil
     }
 }
 
