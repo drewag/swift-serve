@@ -116,6 +116,37 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
         }
         return email
     }
+
+    public func unsubscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, from: Subscribable.Type, using connection: DatabaseConnection) throws {
+        let tableName = from.tableName
+        let fieldName = from.fieldName
+        let field = QualifiedField("\(tableName).\(fieldName)")
+        var update = Update(tableName).filtered(subscriber.justThisInstance)
+        update.set([field:nil])
+        try connection.execute(update)
+    }
+
+    public func subscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, to: Subscribable.Type, using connection: DatabaseConnection) throws {
+        let tableName = to.tableName
+        let fieldName = to.fieldName
+        let field = QualifiedField("\(tableName).\(fieldName)")
+        var update = Update(tableName).filtered(subscriber.justThisInstance )
+        update.set([field:"uuid_generate_v4()"])
+        let params = ["uuid_generate_v4()"]
+            + subscriber.justThisInstance.sqlParameters.flatMap({$0}).map({ value in
+                switch value {
+                case .string(let string):
+                    return "'\(string)'"
+                case .buffer(let buffer):
+                    return (try? String(buffer: buffer)) ?? ""
+                }
+            })
+        let rawUpdate = QueryRenderer.renderStatement(update)
+        let rendered = rawUpdate.sqlStringWithEscapedPlaceholdersUsingPrefix("", transformer: { i in
+            return params[i]
+        })
+        let _ = try connection.execute(rendered)
+    }
 }
 
 public struct AddEmailSubscriptionColumn: DatabaseChange {
