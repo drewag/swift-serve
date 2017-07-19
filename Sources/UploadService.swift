@@ -48,7 +48,7 @@ public struct UploadService: Router {
             path = try self.directory().file(id.uuidString)
         } while path.nonExisting == nil
 
-        let _ = try path.createFile(containing: data, canOverwrite: false, options: .atomicWrite)
+        let _ = try path.createFile(containing: data, canOverwrite: false)
         return UploadIdentifier(id.uuidString)
     }
 
