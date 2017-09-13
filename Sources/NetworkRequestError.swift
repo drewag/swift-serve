@@ -48,7 +48,7 @@ extension NetworkRequestError {
         class status: CoderKey<Int> {}
     }
 
-    func encode(_ encoder: Encoder) {
+    func encode(_ encoder: Swiftlier.Encoder) {
         self.encodeStandard(encoder)
         encoder.encode(self.status.rawValue, forKey: Keys.status.self)
     }

@@ -36,12 +36,12 @@ extension Request {
         return self.accepts.contains(where: {$0 == contentType})
     }
 
-    public func decodableFromJson<Value: Decodable>() throws -> Value? {
+    public func decodableFromJson<Value: Swiftlier.Decodable>() throws -> Value? {
         let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
         return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
     }
 
-    public func decodableFromJsonArray<Value: Decodable>() throws -> [Value]? {
+    public func decodableFromJsonArray<Value: Swiftlier.Decodable>() throws -> [Value]? {
         guard let objectArray = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [Any] else {
             return nil
         }
@@ -57,7 +57,7 @@ extension Request {
         return array
     }
 
-    public func decodableFromJsonDict<Value: Decodable>() throws -> [String:Value]? {
+    public func decodableFromJsonDict<Value: Swiftlier.Decodable>() throws -> [String:Value]? {
         guard let objectDict = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [String:Any] else {
             return nil
         }

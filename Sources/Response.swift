@@ -33,7 +33,7 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: Encodable, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+    public func response(json: Swiftlier.Encodable, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
         return self.response(
             withData: JSON.encode(json, mode: mode),
             status: status,
@@ -45,7 +45,7 @@ extension Request {
         return self.response(status: .movedPermanently, headers: ["Location": "\(to)"])
     }
 
-    public func response(json: [Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+    public func response(json: [Swiftlier.Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
         return self.response(
             withData: JSON.encode(json, mode: mode),
             status: status,
@@ -53,7 +53,7 @@ extension Request {
         )
     }
 
-    public func response(json: [String:Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+    public func response(json: [String:Swiftlier.Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
         return self.response(
             withData: JSON.encode(json, mode: mode),
             status: status,

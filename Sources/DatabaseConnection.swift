@@ -132,7 +132,7 @@ extension RowProtocolError: ReportableError, ErrorGenerating {
         return type(of: self)
     }
 
-    public func encode(_ encoder: Encoder) {
+    public func encode(_ encoder: Swiftlier.Encoder) {
         self.encodeStandard(encoder)
     }
 }
@@ -170,7 +170,7 @@ extension ResultError: ReportableError, ErrorGenerating {
         return type(of: self)
     }
 
-    public func encode(_ encoder: Encoder) {
+    public func encode(_ encoder: Swiftlier.Encoder) {
         self.encodeStandard(encoder)
     }
 }

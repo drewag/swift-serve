@@ -22,7 +22,7 @@ public struct Scheme {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
+public class SwiftServeInstance<S: Server, ExtraInfo: Swiftlier.Codable>: Router {
     public enum Environment {
         case production
         case development
@@ -267,7 +267,7 @@ private extension SwiftServeInstance {
     }
 }
 
-extension SwiftServeInstanceSpec: Codable {
+extension SwiftServeInstanceSpec: Swiftlier.Codable {
     struct Keys {
         class version: CoderKey<String> {}
         class domain: CoderKey<String> {}
@@ -275,7 +275,7 @@ extension SwiftServeInstanceSpec: Codable {
         class extraSchemes: CoderKey<Scheme> {}
     }
 
-    public init(decoder: Decoder) throws {
+    public init(decoder: Swiftlier.Decoder) throws {
         let versionString = try decoder.decode(Keys.version.self)
         let components = versionString.components(separatedBy: ".")
         self.version = (Int(components[0])!, Int(components[1])!)
@@ -284,7 +284,7 @@ extension SwiftServeInstanceSpec: Codable {
         self.extraSchemes = try decoder.decodeArray(Keys.extraSchemes.self)
     }
 
-    public func encode(_ encoder: Encoder) {
+    public func encode(_ encoder: Swiftlier.Encoder) {
         encoder.encode("\(self.version.major).\(self.version.minor)", forKey: Keys.version.self)
         encoder.encode(self.domain, forKey: Keys.domain.self)
         encoder.encode(self.extraInfoSpec, forKey: Keys.extraInfoSpec.self)
@@ -292,18 +292,18 @@ extension SwiftServeInstanceSpec: Codable {
     }
 }
 
-extension Scheme: Codable {
+extension Scheme: Swiftlier.Codable {
     struct Keys {
         class name: CoderKey<String> {}
         class arguments: CoderKey<String> {}
     }
 
-    public init(decoder: Decoder) throws {
+    public init(decoder: Swiftlier.Decoder) throws {
         self.name = try decoder.decode(Keys.name.self)
         self.arguments = try decoder.decodeArray(Keys.arguments.self)
     }
 
-    public func encode(_ encoder: Encoder) {
+    public func encode(_ encoder: Swiftlier.Encoder) {
         encoder.encode(self.name, forKey: Keys.name.self)
         encoder.encode(self.arguments, forKey: Keys.arguments.self)
     }

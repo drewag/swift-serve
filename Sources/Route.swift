@@ -40,7 +40,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func anyWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func anyWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.anyWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -66,7 +66,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .get, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func getWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func getWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.getWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -92,7 +92,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func postWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func postWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.postWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -118,7 +118,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func putWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func putWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.putWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -144,7 +144,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .delete, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func deleteWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func deleteWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.deleteWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -170,7 +170,7 @@ extension Route {
         return VariableRouterRoute<R>(method: .options, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func optionsWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<R.Param>]) -> Route where R.Param: CapturableType {
+    public static func optionsWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.optionsWithParam(consumeEntireSubPath: consumeEntireSubPath, router: router)
     }

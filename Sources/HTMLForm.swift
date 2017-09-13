@@ -60,7 +60,7 @@ public class HTMLForm<Field: HTMLFormField>: ErrorGenerating where Field.RawValu
 }
 
 extension Request {
-    public func parseForm<Field: HTMLFormField>(defaultValues: [Field:String?] = [:], process: (HTMLForm<Field>) throws -> (ResponseStatus?)) -> HTMLForm<Field> {
+    public func parseForm<Field>(defaultValues: [Field:String?] = [:], process: (HTMLForm<Field>) throws -> (ResponseStatus?)) -> HTMLForm<Field> {
         guard Field.all.count > 0 else {
             return HTMLForm(fields: [:])
         }
@@ -96,11 +96,11 @@ extension Request {
         return form
     }
 
-    public func responseStatus<Field: HTMLFormField>(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
+    public func responseStatus<Field>(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
         return try self.responseStatus(htmlFromFiles: [filePath], status: status, headers: headers, form: form, htmlBuild: htmlBuild)
     }
 
-    public func responseStatus<Field: HTMLFormField>(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
+    public func responseStatus<Field>(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
         if let response = form.response {
             return response
         }

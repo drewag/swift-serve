@@ -27,7 +27,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .any, router: router)
     }
 
-    public static func any<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func any(_ path: String? = nil, subRoutes: [ParameterizedRoute<Param>]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.any(path, router: router)
     }
@@ -53,7 +53,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .get, router: router)
     }
 
-    public static func get<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func get(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.get(path, router: router)
     }
@@ -79,7 +79,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .post, router: router)
     }
 
-    public static func post<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func post(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.post(path, router: router)
     }
@@ -105,7 +105,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .put, router: router)
     }
 
-    public static func put<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func put(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.put(path, router: router)
     }
@@ -131,7 +131,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .delete, router: router)
     }
 
-    public static func delete<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func delete(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.delete(path, router: router)
     }
@@ -157,7 +157,7 @@ extension ParameterizedRoute {
         return FixedRouterRoute(path, method: .options, router: router)
     }
 
-    public static func options<R: ParameterizedRouter>(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> where R.Param == Param {
+    public static func options(_ path: String? = nil, subRoutes: [ParameterizedRoute]) -> ParameterizedRoute<Param> {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.options(path, router: router)
     }
