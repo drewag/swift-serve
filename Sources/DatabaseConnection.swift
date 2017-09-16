@@ -39,7 +39,7 @@ public final class DatabaseConnection {
 
     @discardableResult
     public func execute(_ query: Insert, returnInsertedRows: Bool = false) throws -> Result {
-        return try self.connect().execute(query)
+        return try self.connect().execute(query, returnInsertedRows: returnInsertedRows)
     }
 
     @discardableResult
