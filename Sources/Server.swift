@@ -38,7 +38,7 @@ extension Server {
 
         let status: HTTPStatus
         switch reportableError {
-        case let networkError as NetworkRequestError:
+        case let networkError as NetworkError:
             status = networkError.status
         default:
             switch reportableError.perpetrator {
@@ -70,7 +70,12 @@ extension Server {
             return htmlResponse
         }
         else {
-            return request.response(json: reportableError, mode: .update, status: status)
+            do {
+                return try request.response(json: reportableError, status: status)
+            }
+            catch {
+                return request.response(body: reportableError.description, status: status)
+            }
         }
     }
 }

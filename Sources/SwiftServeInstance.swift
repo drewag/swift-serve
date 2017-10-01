@@ -22,7 +22,7 @@ public struct Scheme {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: Swiftlier.Codable>: Router {
+public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public enum Environment {
         case production
         case development
@@ -156,16 +156,16 @@ private extension SwiftServeInstance {
         }
         if let string = try? filePath.map(FileContents()).string()
             , let data = string.data(using: .utf8)
-            , let object = try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
-            , let extraInfo: ExtraInfo = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .saveLocally)
+            , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
         {
             return extraInfo
         }
 
         let extraInfo: ExtraInfo = try! CommandLineDecoder.prompt()
         do {
-            let object = NativeTypesEncoder.objectFromEncodable(extraInfo, mode: .saveLocally)
-            let data = try JSONSerialization.data(withJSONObject: object, options: .prettyPrinted)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(extraInfo)
             let string = String(data: data, encoding: .utf8) ?? ""
             try string.write(toFile: filePath, atomically: true, encoding: .utf8)
         } catch {
@@ -189,8 +189,9 @@ private extension SwiftServeInstance {
 
             let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
             let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes)
-            let object = NativeTypesEncoder.objectFromEncodable(spec, mode: .saveLocally)
-            let data = try JSONSerialization.data(withJSONObject: object, options: .prettyPrinted)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(spec)
             let string = String(data: data, encoding: .utf8) ?? ""
             print(string)
         }
@@ -267,45 +268,45 @@ private extension SwiftServeInstance {
     }
 }
 
-extension SwiftServeInstanceSpec: Swiftlier.Codable {
-    struct Keys {
-        class version: CoderKey<String> {}
-        class domain: CoderKey<String> {}
-        class extraInfoSpec: CoderKey<String> {}
-        class extraSchemes: CoderKey<Scheme> {}
+extension SwiftServeInstanceSpec: Codable {
+    enum CodingKeys: String, CodingKey {
+        case version, domain, extraInfoSpec, extraSchemes
     }
 
-    public init(decoder: Swiftlier.Decoder) throws {
-        let versionString = try decoder.decode(Keys.version.self)
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let versionString = try container.decode(String.self, forKey: .version)
         let components = versionString.components(separatedBy: ".")
         self.version = (Int(components[0])!, Int(components[1])!)
-        self.domain = try decoder.decode(Keys.domain.self)
-        self.extraInfoSpec = try decoder.decode(Keys.extraInfoSpec.self)
-        self.extraSchemes = try decoder.decodeArray(Keys.extraSchemes.self)
+        self.domain = try container.decode(String.self, forKey: .domain)
+        self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
+        self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
     }
 
-    public func encode(_ encoder: Swiftlier.Encoder) {
-        encoder.encode("\(self.version.major).\(self.version.minor)", forKey: Keys.version.self)
-        encoder.encode(self.domain, forKey: Keys.domain.self)
-        encoder.encode(self.extraInfoSpec, forKey: Keys.extraInfoSpec.self)
-        encoder.encode(self.extraSchemes, forKey: Keys.extraSchemes.self)
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode("\(self.version.major).\(self.version.minor)", forKey: .version)
+        try container.encode(self.domain, forKey: .domain)
+        try container.encode(self.extraInfoSpec, forKey: .extraInfoSpec)
+        try container.encode(self.extraSchemes, forKey: .extraSchemes)
     }
 }
 
-extension Scheme: Swiftlier.Codable {
-    struct Keys {
-        class name: CoderKey<String> {}
-        class arguments: CoderKey<String> {}
+extension Scheme: Codable {
+    enum CodingKeys: String, CodingKey {
+        case name, arguments
     }
 
-    public init(decoder: Swiftlier.Decoder) throws {
-        self.name = try decoder.decode(Keys.name.self)
-        self.arguments = try decoder.decodeArray(Keys.arguments.self)
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.arguments = try container.decode([String].self, forKey: .arguments)
     }
 
-    public func encode(_ encoder: Swiftlier.Encoder) {
-        encoder.encode(self.name, forKey: Keys.name.self)
-        encoder.encode(self.arguments, forKey: Keys.arguments.self)
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.name, forKey: .name)
+        try container.encode(self.arguments, forKey: .arguments)
     }
 }
 

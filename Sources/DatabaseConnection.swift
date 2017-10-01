@@ -110,68 +110,40 @@ extension RowProtocolError: CustomStringConvertible {
     }
 }
 
-extension RowProtocolError: ReportableError, ErrorGenerating {
-    public var perpetrator: ErrorPerpitrator {
-        return .system
-    }
-
-    public var doing: String {
-        return "loading value from database"
-    }
-
-    public var reason: AnyErrorReason {
+extension RowProtocolError: ReportableErrorConvertible, ErrorGenerating {
+    public var reportableError: ReportableError {
+        let reason: ErrorReason
         switch self {
         case .expectedQualifiedField(let field):
-            return ErrorReason("there is no column for '\(field)'")
+            reason = ErrorReason("there is no column for '\(field)'")
         case .unexpectedNilValue(let field):
-            return ErrorReason("'\(field)' is null")
+            reason = ErrorReason("'\(field)' is null")
         }
-    }
-
-    public var source: ErrorGenerating.Type {
-        return type(of: self)
-    }
-
-    public func encode(_ encoder: Swiftlier.Encoder) {
-        self.encodeStandard(encoder)
+        return ReportableError(from: type(of: self), by: .system, doing: "loading value from database", because: reason)
     }
 }
 
-extension ResultError: ReportableError, ErrorGenerating {
-    public var perpetrator: ErrorPerpitrator {
-        return .system
-    }
-
-    public var doing: String {
-        return "executing database query"
-    }
-
-    public var reason: AnyErrorReason {
+extension ResultError: ReportableErrorConvertible, ErrorGenerating {
+    public var reportableError: ReportableError {
+        let reason: ErrorReason
         switch self {
         case .badStatus(let status, let message):
             switch status {
             case .EmptyQuery:
-                return ErrorReason("query was empty")
+                reason = ErrorReason("query was empty")
             case .CommandOK, .TuplesOK, .CopyOut, .CopyIn, .CopyBoth, .SingleTuple:
-                return ErrorReason("query had no error")
+                reason = ErrorReason("query had no error")
             case .BadResponse:
-                return ErrorReason("query had bad response: \(message)")
+                reason = ErrorReason("query had bad response: \(message)")
             case .NonFatalError:
-                return ErrorReason("query had non-fatal error: \(message)")
+                reason = ErrorReason("query had non-fatal error: \(message)")
             case .FatalError:
-                return ErrorReason("query had fatal error: \(message)")
+                reason = ErrorReason("query had fatal error: \(message)")
             case .Unknown:
-                return ErrorReason("query had unknown error: \(message)")
+                reason = ErrorReason("query had unknown error: \(message)")
             }
         }
-    }
-
-    public var source: ErrorGenerating.Type {
-        return type(of: self)
-    }
-
-    public func encode(_ encoder: Swiftlier.Encoder) {
-        self.encodeStandard(encoder)
+        return ReportableError(from: type(of: self), by: .system, doing: "executing database query", because: reason)
     }
 }
 

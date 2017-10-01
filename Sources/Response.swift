@@ -33,9 +33,21 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response(json: Swiftlier.Encodable, mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+    public func response<E: Encodable>(json: E, userInfo: [CodingUserInfoKey:Any] = [:], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+        let encoder = JSONEncoder()
+        encoder.userInfo = userInfo
         return self.response(
-            withData: JSON.encode(json, mode: mode),
+            withData: try encoder.encode(json),
+            status: status,
+            headers: headers
+        )
+    }
+
+    public func response<E: Encodable>(json: E, purpose: EncodingPurpose, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+        let encoder = JSONEncoder()
+        encoder.userInfo[CodingOptions.encodingPurpose] = purpose
+        return self.response(
+            withData: try encoder.encode(json),
             status: status,
             headers: headers
         )
@@ -45,25 +57,10 @@ extension Request {
         return self.response(status: .movedPermanently, headers: ["Location": "\(to)"])
     }
 
-    public func response(json: [Swiftlier.Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
-        return self.response(
-            withData: JSON.encode(json, mode: mode),
-            status: status,
-            headers: headers
-        )
-    }
-
-    public func response(json: [String:Swiftlier.Encodable], mode: EncodingMode, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
-        return self.response(
-            withData: JSON.encode(json, mode: mode),
-            status: status,
-            headers: headers
-        )
-    }
-
     public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+        let data = try JSONSerialization.data(withJSONObject: object, options: [])
         return self.response(
-            withData: try JSON.encode(object),
+            withData: data,
             status: status,
             headers: headers
         )

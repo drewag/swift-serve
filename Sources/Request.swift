@@ -36,39 +36,16 @@ extension Request {
         return self.accepts.contains(where: {$0 == contentType})
     }
 
-    public func decodableFromJson<Value: Swiftlier.Decodable>() throws -> Value? {
-        let object = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions())
-        return try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
+    public func decodableFromJSON<Value: Decodable>(userInfo: [CodingUserInfoKey:Any] = [CodingOptions.decodingSource:DecodingSource.remote]) throws -> Value? {
+        let decoder = JSONDecoder()
+        decoder.userInfo = userInfo
+        return try? decoder.decode(Value.self, from: self.data)
     }
 
-    public func decodableFromJsonArray<Value: Swiftlier.Decodable>() throws -> [Value]? {
-        guard let objectArray = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [Any] else {
-            return nil
-        }
-
-        var array = [Value]()
-
-        for object in objectArray {
-            if let decodable: Value = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote) {
-                array.append(decodable)
-            }
-        }
-        
-        return array
-    }
-
-    public func decodableFromJsonDict<Value: Swiftlier.Decodable>() throws -> [String:Value]? {
-        guard let objectDict = try JSONSerialization.jsonObject(with: self.data, options: JSONSerialization.ReadingOptions()) as? [String:Any] else {
-            return nil
-        }
-
-        var dict = [String:Value]()
-
-        for (key, object) in objectDict {
-            dict[key] = try? NativeTypesDecoder.decodableTypeFromObject(object, mode: .remote)
-        }
-
-        return dict
+    public func decodableFromJSON<Value: Decodable>(source: DecodingSource) throws -> Value? {
+        let decoder = JSONDecoder()
+        decoder.userInfo[CodingOptions.decodingSource] = source
+        return try? decoder.decode(Value.self, from: self.data)
     }
 
     public var json: JSON? {
