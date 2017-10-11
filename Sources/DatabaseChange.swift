@@ -97,7 +97,7 @@ public struct FieldSpec: CustomStringConvertible {
     let defaultValue: ValueKind?
 
     public init(name: String, type: DataType, allowNull: Bool = true, isUnique: Bool = false, references: FieldReference? = nil, default: ValueKind? = nil) {
-        self.name = name
+        self.name = name.lowercased()
         self.type = type
         self.allowNull = allowNull
         self.isUnique = isUnique
@@ -107,7 +107,7 @@ public struct FieldSpec: CustomStringConvertible {
     }
 
     public init(name: String, type: DataType, isPrimaryKey: Bool) {
-        self.name = name
+        self.name = name.lowercased()
         self.type = type
         self.isPrimaryKey = isPrimaryKey
 
@@ -228,7 +228,7 @@ public struct CreateSequence: DatabaseChange {
     let name: String
 
     public init(name: String) {
-        self.name = name
+        self.name = name.lowercased()
     }
 
     public var forwardQuery: String {
@@ -245,7 +245,7 @@ public struct UpdateTable: DatabaseChange {
     let updates: [String:ValueKind]
 
     public init(name: String, updates: [String:ValueKind]) {
-        self.name = name
+        self.name = name.lowercased()
         self.updates = updates
     }
 
@@ -273,7 +273,7 @@ public struct CreateTable: DatabaseChange {
     let primaryKey: [String]
 
     public init(name: String, fields: [FieldSpec], primaryKey: [String] = [], constraints: [Constraint] = []) {
-        self.name = name
+        self.name = name.lowercased()
         self.fields = fields
         self.primaryKey = primaryKey
         self.constraints = constraints
@@ -301,7 +301,7 @@ public struct AddColumn: DatabaseChange {
     let spec: FieldSpec
 
     public init(to table: String, with spec: FieldSpec) {
-        self.table = table
+        self.table = table.lowercased()
         self.spec = spec
     }
 
@@ -319,8 +319,8 @@ public struct RemoveColumn: DatabaseChange {
     let name: String
 
     public init(from table: String, named name: String) {
-        self.table = table
-        self.name = name
+        self.table = table.lowercased()
+        self.name = name.lowercased()
     }
 
     public var forwardQuery: String {
@@ -337,7 +337,7 @@ public struct InsertRow: DatabaseChange {
     let values: [String]
 
     public init(into table: String, values: [String]) {
-        self.table = table
+        self.table = table.lowercased()
         self.values = values
     }
 

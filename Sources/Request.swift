@@ -36,15 +36,11 @@ extension Request {
         return self.accepts.contains(where: {$0 == contentType})
     }
 
-    public func decodableFromJSON<Value: Decodable>(userInfo: [CodingUserInfoKey:Any] = [CodingOptions.decodingSource:DecodingSource.remote]) throws -> Value? {
+    public func decodableFromJSON<Value: Decodable>(source: CodingLocation = .local, purpose: CodingPurpose = .create, userInfo: [CodingUserInfoKey:Any] = [:]) throws -> Value? {
         let decoder = JSONDecoder()
         decoder.userInfo = userInfo
-        return try? decoder.decode(Value.self, from: self.data)
-    }
-
-    public func decodableFromJSON<Value: Decodable>(source: DecodingSource) throws -> Value? {
-        let decoder = JSONDecoder()
-        decoder.userInfo[CodingOptions.decodingSource] = source
+        decoder.userInfo.set(purposeDefault: purpose)
+        decoder.userInfo.set(locationDefault: source)
         return try? decoder.decode(Value.self, from: self.data)
     }
 

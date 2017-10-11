@@ -6,6 +6,8 @@
 //
 //
 
+import Swiftlier
+
 public protocol PathComponent {
     func matches(path: String, using method: HTTPMethod) -> Bool
     func consume(path: String) -> String
