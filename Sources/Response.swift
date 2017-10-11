@@ -33,19 +33,11 @@ extension Request {
         return self.response(withData: data, status: status, headers: headers)
     }
 
-    public func response<E: Encodable>(json: E, userInfo: [CodingUserInfoKey:Any] = [:], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+    public func response<E: Encodable>(json: E, purpose: CodingPurpose = .create, userInfo: [CodingUserInfoKey:Any] = [:], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
         let encoder = JSONEncoder()
         encoder.userInfo = userInfo
-        return self.response(
-            withData: try encoder.encode(json),
-            status: status,
-            headers: headers
-        )
-    }
-
-    public func response<E: Encodable>(json: E, purpose: EncodingPurpose, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
-        let encoder = JSONEncoder()
-        encoder.userInfo[CodingOptions.encodingPurpose] = purpose
+        encoder.userInfo.set(purposeDefault: purpose)
+        encoder.userInfo.set(locationDefault: .remote)
         return self.response(
             withData: try encoder.encode(json),
             status: status,
