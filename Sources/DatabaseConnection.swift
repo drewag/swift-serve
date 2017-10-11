@@ -50,6 +50,10 @@ public final class DatabaseConnection {
     public func execute(_ string: String) throws -> Result {
         return try self.connect().execute(string)
     }
+
+    public func transaction<T>(_ block: () throws -> T) throws -> T {
+        return try self.connect().transaction(handler: block)
+    }
 }
 
 private extension DatabaseConnection {
