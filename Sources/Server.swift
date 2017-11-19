@@ -64,6 +64,7 @@ extension Server {
                     builder["reason"] = reportableError.reason.because
                     builder["alert_title"] = reportableError.alertDescription.title
                     builder["alert_message"] = reportableError.alertDescription.message
+                    builder.buildValues(forKey: "stylesheets", withArray: ["/assets/css/error.css"], build: {$1["link"] = $0})
                 }
             ))
         {
