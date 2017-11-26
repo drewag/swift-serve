@@ -177,6 +177,16 @@ public struct FieldSpec: CustomStringConvertible {
     }
 }
 
+public struct CustomChange: DatabaseChange {
+    public let forwardQuery: String
+    public let revertQuery: String?
+
+    public init(forwardQuery: String, revertQuery: String? = nil) {
+        self.forwardQuery = forwardQuery
+        self.revertQuery = revertQuery
+    }
+}
+
 public struct CreateBoundedPseudoEncrypt: DatabaseChange {
     public static func callWith(value: String, max: Int) -> String {
         return "bounded_pseudo_encrypt(\(value), \(max))"
