@@ -26,6 +26,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public enum Environment {
         case production
         case development
+        case test
     }
 
     public let databaseChanges: [DatabaseChange]
@@ -36,6 +37,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate let commandLineParser: Parser
     fileprivate let extraSchemes: [Scheme]
     fileprivate let productionPromise: OptionPromise
+    fileprivate let testPromise: OptionPromise
+    fileprivate var isTesting: Bool = false
 
     public let domain: String
     private var loadedExtraInfo: ExtraInfo?
@@ -49,8 +52,15 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         return loadedExtraInfo
     }
     public var environment: Environment {
+        guard !self.isTesting else {
+            return .test
+        }
+
         if productionPromise.wasPresent {
             return .production
+        }
+        else if testPromise.wasPresent {
+            return .test
         }
         else {
             return .development
@@ -69,6 +79,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         let parser = Parser(arguments: CommandLine.arguments)
         self.commandLineParser = parser
         self.productionPromise = parser.option(named: "prod")
+        self.testPromise = parser.option(named: "test")
         self.allowCrossOriginRequests = allowCrossOriginRequests
 
         self.databaseChanges = databaseChanges
@@ -81,6 +92,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     }
 
     public func run() {
+        self.isTesting = false
         do {
             try self.commandLineParser.parse(beforeExecute: {
                 self.loadDatabaseSetup()
@@ -89,6 +101,11 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         catch {
             print("\(error)")
         }
+    }
+
+    public func setupTest() {
+        self.isTesting = true
+        self.loadDatabaseSetup()
     }
 }
 
@@ -104,6 +121,8 @@ private extension SwiftServeInstance {
         switch self.environment {
         case .development:
             return self.domain.replacingOccurrences(of: ".", with: "_") + "_dev"
+        case .test:
+            return self.domain.replacingOccurrences(of: ".", with: "_") + "_test"
         case .production:
             return self.domain.replacingOccurrences(of: ".", with: "_")
         }
@@ -115,13 +134,7 @@ private extension SwiftServeInstance {
     }
 
     static func loadDatabasePassword(for environment: Environment) -> String {
-        var filePath = "database_password.string"
-        switch environment {
-        case .development:
-            filePath = "dev_\(filePath)"
-        case .production:
-            break
-        }
+        let filePath = "database_password.string"
         if let string = try? filePath.map(FileContents()).string()
             , !string.isEmpty
         {
@@ -151,6 +164,8 @@ private extension SwiftServeInstance {
         switch environment {
         case .development:
             filePath = "dev_\(filePath)"
+        case .test:
+            filePath = "test_\(filePath)"
         case .production:
             break
         }
