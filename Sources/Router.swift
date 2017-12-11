@@ -39,7 +39,7 @@ extension Router {
         }
 
         var output = ""
-        for (index, character) in path.characters.enumerated() {
+        for (index, character) in path.enumerated() {
             guard index != 0 else {
                 continue
             }

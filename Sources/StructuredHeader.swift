@@ -20,7 +20,7 @@ struct StructuredHeader: StringKeyValueParser {
         var currentKey = ""
         var currentValue: String? = nil
 
-        for character in string.characters {
+        for character in string {
             switch character {
             case ";" where mode == .none:
                 output[currentKey] = currentValue ?? ""

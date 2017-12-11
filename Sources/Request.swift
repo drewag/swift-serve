@@ -1,8 +1,9 @@
 import Foundation
 import Swiftlier
+import SQL
 
 public protocol Request: CustomStringConvertible, ErrorGenerating {
-    var databaseConnection: DatabaseConnection {get}
+    var databaseConnection: Connection {get}
     var method: HTTPMethod {get}
     var endpoint: URL {get}
     var data: Data {get}

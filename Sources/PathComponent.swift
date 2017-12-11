@@ -40,9 +40,9 @@ struct StaticPathComponent: PathComponent {
 
     func consume(path: String) -> String {
         var output = String()
-        for (index, character) in path.characters.enumerated() {
-            if index < self.pattern.characters.count
-                || index == self.pattern.characters.count && character == "/"
+        for (index, character) in path.enumerated() {
+            if index < self.pattern.count
+                || index == self.pattern.count && character == "/"
             {
                 continue
             }
@@ -82,7 +82,7 @@ struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
         }
 
         var output = String()
-        for character in path.characters {
+        for character in path {
             if character == "/" {
                 break
             }
@@ -95,7 +95,7 @@ struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
     func consume(path: String) -> String {
         var output = String()
         var foundSlash = false
-        for character in path.characters {
+        for character in path {
             if foundSlash {
                 output.append(character)
             }

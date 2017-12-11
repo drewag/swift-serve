@@ -38,6 +38,7 @@ extension Request {
         encoder.userInfo = userInfo
         encoder.userInfo.set(purposeDefault: purpose)
         encoder.userInfo.set(locationDefault: .remote)
+        encoder.dateEncodingStrategy = .formatted(ISO8601DateTimeFormatters.first!)
         return self.response(
             withData: try encoder.encode(json),
             status: status,

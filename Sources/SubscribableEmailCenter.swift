@@ -8,11 +8,10 @@
 
 import Foundation
 import Swiftlier
-import SQL
 import TextTransformers
-import PostgreSQL
+import SQL
 
-public protocol EmailSubscriber: TableProtocol {
+public protocol EmailSubscriber: TableStorable {
     var email: EmailAddress {get}
     var justThisInstance: Predicate {get}
 }
@@ -26,7 +25,7 @@ public protocol AnySubscribableEmail {
 public protocol SubscribableEmail: AnySubscribableEmail {
     associatedtype Subscriber: EmailSubscriber
 
-    static var field: Subscriber.Field {get}
+    static var field: Subscriber.Fields {get}
     static var templatePath: Path {get}
     var subject: String {get}
     var from: String {get}
@@ -93,7 +92,7 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
         return html
     }
 
-    public func unsubscribe(usingToken token: String, using connection: DatabaseConnection) throws -> AnySubscribableEmail.Type {
+    public func unsubscribe(usingToken token: String, using connection: Connection) throws -> AnySubscribableEmail.Type {
         let components = token.components(separatedBy: "_")
         guard components.count == 3 else {
             throw self.userError("unsubscribing", because: ErrorReason.invalidToken)
@@ -108,44 +107,25 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
         }
 
         let email = self.possibleEmails[index]
-        let field = QualifiedField("\(tableName).\(fieldName)")
-        var update = Update(tableName).filtered(field == rawToken)
-        update.set([field:nil])
+        let field = QualifiedField(name: fieldName, table: tableName)
+        let update = UpdateArbitraryQuery(tableName).filtered(field == rawToken)
+            .setting([field:nil])
         guard try connection.execute(update).countAffected > 0 else {
             throw self.userError("unsubscribing", because: ErrorReason.invalidToken)
         }
         return email
     }
 
-    public func unsubscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, from: Subscribable.Type, using connection: DatabaseConnection) throws {
-        let tableName = from.tableName
-        let fieldName = from.fieldName
-        let field = QualifiedField("\(tableName).\(fieldName)")
-        var update = Update(tableName).filtered(subscriber.justThisInstance)
-        update.set([field:nil])
+    public func unsubscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, from: Subscribable.Type, using connection: Connection) throws {
+        let update = UpdateTableQuery<Subscribable.Subscriber>().filtered(subscriber.justThisInstance)
+            .setting([from.field:nil])
         try connection.execute(update)
     }
 
-    public func subscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, to: Subscribable.Type, using connection: DatabaseConnection) throws {
-        let tableName = to.tableName
-        let fieldName = to.fieldName
-        let field = QualifiedField("\(tableName).\(fieldName)")
-        var update = Update(tableName).filtered(subscriber.justThisInstance )
-        update.set([field:"uuid_generate_v4()"])
-        let params = ["uuid_generate_v4()"]
-            + subscriber.justThisInstance.sqlParameters.flatMap({$0}).map({ value in
-                switch value {
-                case .string(let string):
-                    return "'\(string)'"
-                case .buffer(let buffer):
-                    return (try? String(buffer: buffer)) ?? ""
-                }
-            })
-        let rawUpdate = QueryRenderer.renderStatement(update)
-        let rendered = rawUpdate.sqlStringWithEscapedPlaceholdersUsingPrefix("", transformer: { i in
-            return params[i]
-        })
-        let _ = try connection.execute(rendered)
+    public func subscribe<Subscribable: SubscribableEmail>(_ subscriber: Subscribable.Subscriber, to: Subscribable.Type, using connection: Connection) throws {
+        let update = UpdateTableQuery<Subscribable.Subscriber>().filtered(subscriber.justThisInstance)
+            .setting([to.field:Function.generateUUIDv4])
+        try connection.execute(update)
     }
 }
 
@@ -153,39 +133,52 @@ public struct AddEmailSubscriptionColumn: DatabaseChange {
     let addColumn: AddColumn
 
     public init<Email: SubscribableEmail>(for emailType: Email.Type, defaultToSubscribed: Bool) {
-        self.addColumn = AddColumn(to: Email.tableName, with: FieldSpec(
+        let param: Parameter
+        if defaultToSubscribed {
+            let function: Function = .generateUUIDv4
+            param = .function(function)
+        }
+        else {
+            param = .null
+        }
+        self.addColumn = Email.Subscriber.addColumn(withSpec: FieldSpec(
             name: Email.fieldName,
             type: .uuid,
             allowNull: true,
             isUnique: true,
             references: nil,
-            default: defaultToSubscribed ? .calculated("uuid_generate_v4()") : nil
+            default: param
         ))
     }
 
-    public var forwardQuery: String {
-        return "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
-            + self.addColumn.forwardQuery
+    public var forwardQueries: [AnyQuery] {
+        return self.addColumn.forwardQueries
     }
 
-    public var revertQuery: String? {
-        return self.addColumn.revertQuery
+    public var revertQueries: [AnyQuery]? {
+        return self.addColumn.revertQueries
     }
 }
 
 extension SubscribableEmail {
     public static var tableName: String {
-        return self.Subscriber.Field.tableName
+        return self.Subscriber.tableName
     }
 
     public static var fieldName: String {
-        return "\(self.field.rawValue)"
+        return "\(self.field.stringValue)"
+    }
+}
+
+private extension AnySubscribableEmail {
+    static var field: QualifiedField {
+        return QualifiedField(name: self.fieldName, table: self.tableName)
     }
 }
 
 private extension SubscribableEmail {
-    var select: Select {
-        return Select("\(type(of: self).field.rawValue)", from: type(of: self).Subscriber.Field.tableName)
+    var select: SelectQuery<Subscriber> {
+        return Subscriber.select([.my(type(of: self).field)])
     }
 }
 
@@ -194,13 +187,13 @@ private extension SubscribableEmailCenter {
         return String(randomOfLength: 16)
     }
 
-    func token<Subscribable: SubscribableEmail>(for subscriber: Subscribable.Subscriber, to email: Subscribable, using connection: DatabaseConnection) throws -> String? {
+    func token<Subscribable: SubscribableEmail>(for subscriber: Subscribable.Subscriber, to email: Subscribable, using connection: Connection) throws -> String? {
         let result = try connection.execute(email.select.filtered(subscriber.justThisInstance))
-        guard let first = result.first else {
+        guard let first = result.rows.first else {
             throw self.error("sending email", because: "The subscriber could not be found")
         }
 
-        guard let rawToken: String = try first.value("\(type(of: email).field.rawValue)") else {
+        guard let rawToken: String = try first.getIfExists(type(of: email).field) else {
             return nil
         }
 

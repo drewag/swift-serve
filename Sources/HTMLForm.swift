@@ -41,7 +41,7 @@ public class HTMLForm<Field: HTMLFormField>: ErrorGenerating where Field.RawValu
 
     func display(for field: Field) -> String {
         var output = ""
-        for character in field.rawValue.characters {
+        for character in field.rawValue {
             guard !output.isEmpty else {
                 output.append(character)
                 output = output.uppercased()

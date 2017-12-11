@@ -11,6 +11,7 @@ import Swiftlier
 import Foundation
 import TextTransformers
 import SQL
+import PostgreSQL
 
 public struct Scheme {
     public let name: String
@@ -239,7 +240,7 @@ private extension SwiftServeInstance {
             parser.command(named: "migrate") { parser in
                 try parser.parse()
 
-                let connection = DatabaseConnection()
+                let connection = PostgreSQLConnection()
                 let currentVersion = try SwiftServe.getVersion(from: connection)
                 var newVersion = currentVersion
 
@@ -248,7 +249,9 @@ private extension SwiftServeInstance {
                 }
 
                 for index in currentVersion ..< self.databaseChanges.count {
-                    let _ = try connection.execute(self.databaseChanges[index].forwardQuery)
+                    for query in self.databaseChanges[index].forwardQueries {
+                        try connection.executeIgnoringResult(query)
+                    }
                     newVersion += 1
                 }
             }
@@ -325,24 +328,31 @@ extension Scheme: Codable {
     }
 }
 
-private struct SwiftServe: TableProtocol {
-    enum Field: String, TableField {
-        static let tableName = "swift_serve"
+private struct SwiftServe: TableStorable {
+    static let tableName = "swift_serve"
 
+    enum Fields: String, Field {
         case version
+
+        var sqlFieldSpec: FieldSpec? {
+            switch self {
+            case .version:
+                return self.spec(dataType: .smallint, allowNull: false, isUnique: false, references: nil, defaultValue: 0)
+            }
+        }
     }
 
-    static func updateVersion(to version: Int, in connection: DatabaseConnection) throws {
+    static func updateVersion(to version: Int, in connection: Connection) throws {
         try connection.execute(self.update([
-            .version: version,
+            (.version, version),
         ]))
     }
 
-    static func getVersion(from connection: DatabaseConnection) throws -> Int {
-        let result = try connection.execute(self.select)
-        guard result.count >= 1 else {
+    static func getVersion(from connection: Connection) throws -> Int {
+        let result = try connection.execute(self.select())
+        guard let row = result.rows.first else {
             return 0
         }
-        return try result[0].value("version")
+        return try row.get(.version)
     }
 }
