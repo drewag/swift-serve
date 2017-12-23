@@ -28,9 +28,3 @@ extension PostgreSQLConnection {
         )
     }
 }
-
-extension SQLError: ReportableErrorConvertible, ErrorGenerating {
-    public var reportableError: ReportableError {
-        return self.error("executing database command", because: self.description)
-    }
-}

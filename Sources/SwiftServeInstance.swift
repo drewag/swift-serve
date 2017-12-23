@@ -350,7 +350,7 @@ private struct SwiftServe: TableStorable {
 
     static func getVersion(from connection: Connection) throws -> Int {
         let result = try connection.execute(self.select())
-        guard let row = result.rows.first else {
+        guard let row = result.rows.next() else {
             return 0
         }
         return try row.get(.version)

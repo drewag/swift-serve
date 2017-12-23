@@ -178,7 +178,7 @@ private extension AnySubscribableEmail {
 
 private extension SubscribableEmail {
     var select: SelectQuery<Subscriber> {
-        return Subscriber.select([.my(type(of: self).field)])
+        return Subscriber.select([type(of: self).field])
     }
 }
 
@@ -189,7 +189,7 @@ private extension SubscribableEmailCenter {
 
     func token<Subscribable: SubscribableEmail>(for subscriber: Subscribable.Subscriber, to email: Subscribable, using connection: Connection) throws -> String? {
         let result = try connection.execute(email.select.filtered(subscriber.justThisInstance))
-        guard let first = result.rows.first else {
+        guard let first = result.rows.next() else {
             throw self.error("sending email", because: "The subscriber could not be found")
         }
 
