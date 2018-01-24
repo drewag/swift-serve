@@ -13,6 +13,10 @@ public struct MultiFormPart {
     public let name: String?
     public let contentType: ContentType?
 
+    public var contents: String? {
+        return String(data: self.data, encoding: .utf8)
+    }
+
     static func parts(in data: Data, usingBoundary boundary: String) -> [MultiFormPart] {
         guard let firstBoundaryData = "--\(boundary)\r\n".data(using: .utf8)
             , let midBoundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8)

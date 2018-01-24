@@ -41,7 +41,6 @@ public struct TestClientRequest: ClientRequest {
 struct TestClientResponse: ClientResponse {
     let body: Data
     let status: HTTPStatus
-
 }
 
 public class TestClient: Client {
@@ -60,5 +59,18 @@ public class TestClient: Client {
         }
         let result = block(request)
         return TestClientResponse(body: result.body, status: result.status)
+    }
+}
+
+extension TestClientRequest {
+    public func multiFormParts(usingBoundary boundary: String) -> [String:MultiFormPart] {
+        let parts = MultiFormPart.parts(in: self.body, usingBoundary: boundary)
+        var output = [String:MultiFormPart]()
+        for part in parts {
+            if let name = part.name {
+                output[name] = part
+            }
+        }
+        return output
     }
 }
