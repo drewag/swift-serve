@@ -10,7 +10,7 @@ import Foundation
 import Swiftlier
 
 public protocol ClientRequest {
-    init(method: HTTPMethod, url: URL, headers: [String:String], username: String?, password: String?, body: String)
+    init(method: HTTPMethod, url: URL, headers: [String:String], username: String?, password: String?, body: Data)
 }
 
 public protocol ClientResponse {
@@ -40,6 +40,25 @@ public class ClientFactory {
         username: String? = nil,
         password: String? = nil,
         body: String
+        ) -> ClientRequest
+    {
+        return self.requestType.init(
+            method: method,
+            url: url,
+            headers: headers,
+            username: username,
+            password: password,
+            body: body.data(using: .utf8) ?? Data()
+        )
+    }
+
+    public func createRequest(
+        withMethod method: HTTPMethod,
+        url: URL,
+        headers: [String:String] = [:],
+        username: String? = nil,
+        password: String? = nil,
+        body: Data
         ) -> ClientRequest
     {
         return self.requestType.init(

@@ -14,7 +14,11 @@ public struct TestClientRequest: ClientRequest {
     public let headers: [String:String]
     public let username: String?
     public let password: String?
-    public let body: String
+    public let body: Data
+
+    public var bodyString: String? {
+        return String(data: self.body, encoding: .utf8)
+    }
 
     public init(
         method: HTTPMethod,
@@ -22,7 +26,8 @@ public struct TestClientRequest: ClientRequest {
         headers: [String : String],
         username: String?,
         password: String?,
-        body: String)
+        body: Data
+        )
     {
         self.method = method
         self.url = url
