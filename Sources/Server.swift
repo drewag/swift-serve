@@ -49,7 +49,7 @@ extension Server {
             }
         }
 
-        if request.accepts(.html),
+        if request.accepts(.html(.utf8)),
             let htmlResponse = (try? request.response(
                 htmlFromFiles: [
                     "Views/Template/Header.html",

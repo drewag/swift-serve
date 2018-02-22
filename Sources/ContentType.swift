@@ -10,9 +10,14 @@ public enum ContentType {
     case pdf
     case png
     case jpg
-    case html
+    case octetStream
+    case html(String.Encoding)
+    case plainText(String.Encoding)
 
     case multipartFormData(boundary: String)
+    case multipartAlternative(boundary: String)
+    case multipartMixed(boundary: String)
+    case multipartRelated(boundary: String)
 
     case none
     case other(String)
@@ -25,7 +30,7 @@ public enum ContentType {
 
         var parts = string.components(separatedBy: ";")
 
-        switch parts.removeFirst() {
+        switch parts.removeFirst().trimmingWhitespaceOnEnds.lowercased() {
         case "multipart/form-data" where parts.count > 0:
             let remaining = parts.joined(separator: ";")
             guard let boundary = StructuredHeader.parse(remaining)["boundary"] else {
@@ -33,10 +38,45 @@ public enum ContentType {
                 return
             }
             self = .multipartFormData(boundary: boundary)
+        case "multipart/alternative" where parts.count > 0:
+            let remaining = parts.joined(separator: ";")
+            guard let boundary = StructuredHeader.parse(remaining)["boundary"] else {
+                self = .other(string)
+                return
+            }
+            self = .multipartAlternative(boundary: boundary)
+        case "multipart/mixed" where parts.count > 0:
+            let remaining = parts.joined(separator: ";")
+            guard let boundary = StructuredHeader.parse(remaining)["boundary"] else {
+                self = .other(string)
+                return
+            }
+            self = .multipartMixed(boundary: boundary)
+        case "multipart/related" where parts.count > 0:
+            let remaining = parts.joined(separator: ";")
+            guard let boundary = StructuredHeader.parse(remaining)["boundary"] else {
+                self = .other(string)
+                return
+            }
+            self = .multipartRelated(boundary: boundary)
         case "text/html":
-            self = .html
+            let remaining = parts.joined(separator: ";")
+            var encoding: String.Encoding = .utf8
+            if let encodingString = StructuredHeader.parse(remaining)["charset"] {
+                encoding = String.Encoding(string: encodingString)
+            }
+            self = .html(encoding)
+        case "text/plain":
+            let remaining = parts.joined(separator: ";")
+            var encoding: String.Encoding = .utf8
+            if let encodingString = StructuredHeader.parse(remaining)["charset"] {
+                encoding = String.Encoding(string: encodingString)
+            }
+            self = .plainText(encoding)
         case "appliction/pdf":
             self = .pdf
+        case "application/octet-stream":
+            self = .octetStream
         default:
             self = .other(string)
         }
@@ -52,6 +92,19 @@ public enum ContentType {
             output.append(ContentType(type))
         }
         return output
+    }
+}
+
+extension String.Encoding {
+    init(string: String) {
+        switch string.lowercased() {
+        case "us-ascii":
+            self = .ascii
+        case "windows-1252":
+            self = .windowsCP1252
+        default:
+            self = .utf8
+        }
     }
 }
 
@@ -86,9 +139,44 @@ extension ContentType: Equatable {
             default:
                 return false
             }
+        case .plainText:
+            switch rhs {
+            case .plainText:
+                return true
+            default:
+                return false
+            }
+        case .octetStream:
+            switch rhs {
+            case .octetStream:
+                return true
+            default:
+                return false
+            }
         case .multipartFormData:
             switch rhs {
             case .multipartFormData:
+                return true
+            default:
+                return false
+            }
+        case .multipartMixed:
+            switch rhs {
+            case .multipartMixed:
+                return true
+            default:
+                return false
+            }
+        case .multipartAlternative:
+            switch rhs {
+            case .multipartAlternative:
+                return true
+            default:
+                return false
+            }
+        case .multipartRelated:
+            switch rhs {
+            case .multipartRelated:
                 return true
             default:
                 return false
