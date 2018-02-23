@@ -62,26 +62,55 @@ extension String {
 }
 
 private extension String {
-    func bytesByRemovingPercentEncoding(using encoding: String.Encoding) -> Data {
-        struct My {
-            static let regex = try! NSRegularExpression(pattern: "(%[0-9A-F]{2})|(.)", options: .caseInsensitive)
-        }
-        var bytes = Data()
-        let nsSelf = self as NSString
-        for match in My.regex.matches(in: self, range: NSRange(0..<self.utf16.count)) {
-            if match.rangeAt(1).location != NSNotFound {
-                let hexString = nsSelf.substring(with: NSMakeRange(match.rangeAt(1).location+1, 2))
-                bytes.append(UInt8(hexString, radix: 16)!)
-            } else {
-                let singleChar = nsSelf.substring(with: match.rangeAt(2))
-                bytes.append(singleChar.data(using: encoding) ?? "?".data(using: .ascii)!)
-            }
-        }
-        return bytes
+    enum PercentMode {
+        case none, percent(String?)
     }
 
     func removingPercentEncoding(using encoding: String.Encoding) -> String? {
-        return String(data: bytesByRemovingPercentEncoding(using: encoding), encoding: encoding)
+        var output = ""
+        var mode = PercentMode.none
+
+        func cancelEscape(_ first: String?) {
+            output.append("%")
+            if let first = first {
+                output += "\(first)"
+            }
+            mode = .none
+        }
+
+        for character in self {
+            switch character {
+            case "%":
+                switch mode {
+                case .none:
+                    mode = .percent(nil)
+                case .percent(let first):
+                    cancelEscape(first)
+                }
+            case "0","1","2","3","4","5","6","7","8","9":
+                switch mode {
+                case .none:
+                    output.append(character)
+                case .percent(let first):
+                    guard let first = first else {
+                        mode = .percent("\(character)")
+                        break
+                    }
+                    let hexString = "\(first)\(character)"
+                    let bytes = [UInt8(hexString, radix: 16)!]
+                    let decoded = String(data: Data(bytes), encoding: encoding) ?? "?"
+                    output += decoded
+                }
+            default:
+                switch mode {
+                case .none:
+                    output.append(character)
+                case let .percent(first):
+                    cancelEscape(first)
+                }
+            }
+        }
+        return output
     }
 
     func decodingQuotedPrintable(using encoding: String.Encoding) -> String? {
