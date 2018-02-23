@@ -6,6 +6,8 @@
 //
 //
 
+import Foundation
+
 public enum ContentType {
     case pdf
     case png
@@ -13,6 +15,7 @@ public enum ContentType {
     case octetStream
     case html(String.Encoding)
     case plainText(String.Encoding)
+    case zip(name: String?)
 
     case multipartFormData(boundary: String)
     case multipartAlternative(boundary: String)
@@ -73,7 +76,10 @@ public enum ContentType {
                 encoding = String.Encoding(string: encodingString)
             }
             self = .plainText(encoding)
-        case "appliction/pdf":
+        case "application/zip", "application/x-zip-compressed", "application/gzip":
+            let remaining = parts.joined(separator: ";")
+            self = .zip(name: StructuredHeader.parse(remaining)["name"])
+        case "application/pdf":
             self = .pdf
         case "application/octet-stream":
             self = .octetStream
@@ -156,6 +162,13 @@ extension ContentType: Equatable {
         case .multipartFormData:
             switch rhs {
             case .multipartFormData:
+                return true
+            default:
+                return false
+            }
+        case .zip:
+            switch rhs {
+            case .zip:
                 return true
             default:
                 return false
