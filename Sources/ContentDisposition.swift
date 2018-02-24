@@ -10,6 +10,7 @@ import Foundation
 public enum ContentDisposition {
     case inline
     case attachment(fileName: String?)
+    case formData(name: String)
 
     case none
     case other(String)
@@ -32,6 +33,13 @@ public enum ContentDisposition {
                 return
             }
             self = .attachment(fileName: fileName)
+        case "form-data" where parts.count > 0:
+            let remaining = parts.joined(separator: ";")
+            guard let name = StructuredHeader.parse(remaining)["name"] else {
+                self = .other(string)
+                return
+            }
+            self = .formData(name: name)
         case "attachment":
             self = .attachment(fileName: nil)
         default:

@@ -29,6 +29,14 @@ extension Request {
         return ContentType(self.headers["Content-Type"])
     }
 
+    public var contentTransferEncoding: ContentTransferEncoding {
+        return ContentTransferEncoding(self.headers["Content-Transfer-Encoding"])
+    }
+
+    public var contentDisposition: ContentDisposition {
+        return ContentDisposition(self.headers["Content-Dispoition"])
+    }
+
     var accepts: [ContentType] {
         return ContentType.types(from: self.headers["Accept"])
     }
@@ -79,18 +87,14 @@ extension Request {
         return "\(key)=\(value); Expires=\(date.gmtDateTime)"
     }
 
-    public func part(named: String) -> MultiFormPart? {
-        switch self.contentType {
-        case .multipartFormData(let boundary):
-            for part in MultiFormPart.parts(in: self.data, usingBoundary: boundary) {
-                if part.name == named {
-                    return part
-                }
-            }
-            return nil
-        default:
-            return nil
-        }
+    public var mimePart: MimePart? {
+        return try? MimePart(
+            body: self.data,
+            headers: self.headers,
+            contentType: self.contentType,
+            contentTransferEncoding: self.contentTransferEncoding,
+            contentDisposition: self.contentDisposition
+        )
     }
 }
 

@@ -13,6 +13,7 @@ public enum ContentType {
     case png
     case jpg
     case octetStream
+    case csv
     case html(String.Encoding)
     case plainText(String.Encoding)
     case zip(name: String?)
@@ -21,6 +22,7 @@ public enum ContentType {
     case multipartAlternative(boundary: String)
     case multipartMixed(boundary: String)
     case multipartRelated(boundary: String)
+    case multipartReport(boundary: String, reportType: String)
 
     case none
     case other(String)
@@ -62,6 +64,18 @@ public enum ContentType {
                 return
             }
             self = .multipartRelated(boundary: boundary)
+        case "multipart/report" where parts.count > 0:
+            let remaining = parts.joined(separator: ";")
+            let parsedHeader = StructuredHeader.parse(remaining)
+            guard let boundary = parsedHeader["boundary"] else {
+                self = .other(string)
+                return
+            }
+            guard let reportType = parsedHeader["report-type"] else {
+                self = .other(string)
+                return
+            }
+            self = .multipartReport(boundary: boundary, reportType: reportType)
         case "text/html":
             let remaining = parts.joined(separator: ";")
             var encoding: String.Encoding = .utf8
@@ -83,6 +97,8 @@ public enum ContentType {
             self = .pdf
         case "application/octet-stream":
             self = .octetStream
+        case "text/csv":
+            self = .csv
         default:
             self = .other(string)
         }
@@ -145,6 +161,13 @@ extension ContentType: Equatable {
             default:
                 return false
             }
+        case .csv:
+            switch rhs {
+            case .csv:
+                return true
+            default:
+                return false
+            }
         case .plainText:
             switch rhs {
             case .plainText:
@@ -155,6 +178,13 @@ extension ContentType: Equatable {
         case .octetStream:
             switch rhs {
             case .octetStream:
+                return true
+            default:
+                return false
+            }
+        case .multipartReport:
+            switch rhs {
+            case .multipartReport:
                 return true
             default:
                 return false
