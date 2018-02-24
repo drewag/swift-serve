@@ -7,11 +7,11 @@
 
 import Swiftlier
 
-struct NamedEmailAddress: CustomStringConvertible, Codable {
-    let name: String?
-    let email: EmailAddress
+public struct NamedEmailAddress: CustomStringConvertible, Codable {
+    public let name: String?
+    public let email: EmailAddress
 
-    static func addresses(from string: String?) -> [NamedEmailAddress]? {
+    public static func addresses(from string: String?) -> [NamedEmailAddress]? {
         guard let string = string else {
             return nil
         }
@@ -38,7 +38,7 @@ struct NamedEmailAddress: CustomStringConvertible, Codable {
         }
     }
 
-    init?(_ string: String?) {
+    public init?(_ string: String?) {
         guard let string = string else {
             return nil
         }
@@ -66,7 +66,7 @@ struct NamedEmailAddress: CustomStringConvertible, Codable {
         }
     }
 
-    var description: String {
+    public var description: String {
         if let name = name {
             return "\(name) <\(email.string)>"
         }

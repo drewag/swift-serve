@@ -8,33 +8,33 @@
 import Foundation
 import Swiftlier
 
-struct EmailParser: CustomStringConvertible, ErrorGenerating, Codable {
-    let headers: [String:String]
+public struct EmailParser: CustomStringConvertible, ErrorGenerating, Codable {
+    public let headers: [String:String]
 
-    let messageId: String
-    let from: NamedEmailAddress
-    let to: [NamedEmailAddress]?
-    let date: Date
-    let returnPath: String?
-    let references: [String]
+    public let messageId: String
+    public let from: NamedEmailAddress
+    public let to: [NamedEmailAddress]?
+    public let date: Date
+    public let returnPath: String?
+    public let references: [String]
 
-    var subject: String? {
+    public var subject: String? {
         return self.headers["subject"]
     }
 
-    enum Content {
+    public enum Content {
         case plain(String)
         case html(String)
     }
-    let content: Content
+    public let content: Content
 
-    struct Attachment: Codable {
-        let name: String
-        let data: Data
+    public struct Attachment: Codable {
+        public let name: String
+        public let data: Data
     }
-    let attachments: [Attachment]
+    public let attachments: [Attachment]
 
-    var description: String {
+    public var description: String {
         var output = "\(date.iso8601DateTime) \(messageId) '\(from)' -> "
         if let to = to {
             output += to.map({$0.description}).joined(separator: ", ")
@@ -42,7 +42,7 @@ struct EmailParser: CustomStringConvertible, ErrorGenerating, Codable {
         return output
     }
 
-    init(path: FilePath) throws {
+    public init(path: FilePath) throws {
         //        print("=================================================================")
 
         //        self.path = path
@@ -54,7 +54,7 @@ struct EmailParser: CustomStringConvertible, ErrorGenerating, Codable {
         try self.init(contents: contents)
     }
 
-    init(contents: String) throws {
+    public init(contents: String) throws {
         var headers = [String:String]()
         var fullLine = ""
 
@@ -339,7 +339,7 @@ extension EmailParser.Content: Codable {
         }
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let content = try container.decode(String.self, forKey: .content)
         let kind = try container.decode(Int.self, forKey: .kind)
@@ -353,7 +353,7 @@ extension EmailParser.Content: Codable {
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         switch self {
