@@ -574,7 +574,7 @@ private extension String {
                 case .percent(let first):
                     cancelEscape(first)
                 }
-            case "0","1","2","3","4","5","6","7","8","9":
+            case "0","1","2","3","4","5","6","7","8","9", "A", "B", "C", "D", "E", "F":
                 switch mode {
                 case .none:
                     output.append(character)
@@ -598,77 +598,6 @@ private extension String {
             }
         }
         return output
-    }
-
-    func decodingQuotedPrintable(using encoding: String.Encoding) -> String? {
-        let next = self
-            .replacingOccurrences(of: "=\r\n", with: "")
-            .replacingOccurrences(of: "=\n", with: "")
-            .replacingOccurrences(of: "%", with: "%25")
-            .replacingOccurrences(of: "=", with: "%")
-            .replacingOccurrences(of: "\n", with: "%0A")
-        return next.removingPercentEncoding(using: encoding)
-    }
-
-    var quotedPrintableEncoded: String {
-        var charCount = 0
-
-        var result = ""
-        result.reserveCapacity(self.count)
-
-        for character in self.utf8 {
-            switch character {
-            case 32...60, 62...126:
-                charCount += 1
-                result.append(String(UnicodeScalar(character)))
-            case 13:
-                continue
-            case 10:
-                if result.last == " " || result.last == "\t" {
-                    result.append("=\r\n")
-                    charCount = 0
-                } else {
-                    result.append("\r\n")
-                    charCount = 0
-                }
-            default:
-                if charCount > 72 {
-                    result.append("=\r\n")
-                    charCount = 0
-                }
-                result.append("=")
-                result.append(character.hexString().uppercased())
-                charCount+=3
-            }
-
-            if charCount == 75 {
-                charCount = 0
-                result.append("=\r\n")
-            }
-        }
-        return result
-    }
-}
-
-private extension UInt8 {
-    func hexString(padded: Bool = true) -> String {
-        let dict:[Character] = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
-        var result = ""
-
-        let c1 = Int(self >> 4)
-        let c2 = Int(self & 0xf)
-
-        if c1 == 0 && padded {
-            result.append(dict[c1])
-        } else if c1 > 0 {
-            result.append(dict[c1])
-        }
-        result.append(dict[c2])
-
-        if (result.count == 0) {
-            return "0"
-        }
-        return result
     }
 }
 
