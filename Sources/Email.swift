@@ -32,11 +32,16 @@ public struct Email {
                 headers["Reply-To"] = Email.sanitize(replyTo)
             }
 
+            if let returnPath = self.returnPath {
+                headers["Return-Path"] = Email.sanitize(returnPath)
+            }
+
             return (body, headers)
 
         }
 
         public var replyTo: String? = nil
+        public var returnPath: String? = nil
         public mutating func append(html: String) {
             self.html += html
         }
