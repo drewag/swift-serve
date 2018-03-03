@@ -185,7 +185,7 @@ extension String.Encoding {
         case .windowsCP1252:
             return "windows-1252"
         default:
-            return "utf8"
+            return "utf-8"
         }
     }
 }

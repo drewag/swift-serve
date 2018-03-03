@@ -445,7 +445,7 @@ extension MimePart.Content {
         case .multipartAlternative(let parts):
             let boundary = UUID().uuidString
             extraHeaders["Content-Type"] = ContentType.multipartAlternative(boundary: boundary).raw
-            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
             extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
             body = parts.rawMIME(withBoundary: boundary)
         case .multipartFormData(let parts):
