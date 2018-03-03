@@ -141,7 +141,7 @@ private extension Email.Builder {
     var rootPart: MimePart {
         let htmlPart = MimePart(content: .html(self.html), name: nil)
         let plainPart = MimePart(content: .plain(self.plain), name: nil)
-        let alternativePart = MimePart(content: .multipartAlternative([htmlPart,plainPart]), name: nil)
+        let alternativePart = MimePart(content: .multipartAlternative([plainPart,htmlPart]), name: nil)
 
         switch (self.html.isEmpty, self.plain.isEmpty, self.attachments.isEmpty) {
         case (false, true, true):
