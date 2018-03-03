@@ -17,6 +17,8 @@ public enum ContentType {
     case html(String.Encoding)
     case plainText(String.Encoding)
     case zip(name: String?)
+    case deliveryStatus
+    case email
 
     case multipartFormData(boundary: String)
     case multipartAlternative(boundary: String)
@@ -99,6 +101,10 @@ public enum ContentType {
             self = .octetStream
         case "text/csv":
             self = .csv
+        case "message/delivery-status":
+            self = .deliveryStatus
+        case "message/rfc822":
+            self = .email
         default:
             self = .other(string)
         }
@@ -115,6 +121,49 @@ public enum ContentType {
         }
         return output
     }
+
+    public var raw: String? {
+        switch self {
+        case .csv:
+            return "text/csv"
+        case .deliveryStatus:
+            return "message/delivery-status"
+        case .html(let encoding):
+            return "text/html; charset=\(encoding.raw)"
+        case .jpg:
+            return "image/jpeg"
+        case .multipartAlternative(let boundary):
+            return "multipart/alternative; boundary=\(boundary)"
+        case .multipartFormData(let boundary):
+            return "multipart/form-data; boundary=\(boundary)"
+        case .multipartMixed(let boundary):
+            return "multipart/mixed; boundary=\(boundary)"
+        case .multipartRelated(let boundary):
+            return "multipart/related; boundary=\(boundary)"
+        case .multipartReport(let boundary, let reportType):
+            return "multipart/report; boundary=\(boundary); report-type=\(reportType)"
+        case .none:
+            return nil
+        case .octetStream:
+            return "application/octet-stream"
+        case .other(let other):
+            return other
+        case .pdf:
+            return "application/pdf"
+        case .plainText(let encoding):
+            return "text/plain; charset=\(encoding.raw)"
+        case .png:
+            return "image/png"
+        case .email:
+            return "message/rfc822"
+        case .zip(let name):
+            var output = "application/zip"
+            if let name = name {
+                output += "; name=\(name)"
+            }
+            return output
+        }
+    }
 }
 
 extension String.Encoding {
@@ -128,6 +177,17 @@ extension String.Encoding {
             self = .utf8
         }
     }
+
+    var raw: String {
+        switch self {
+        case .ascii:
+            return "us-ascii"
+        case .windowsCP1252:
+            return "windows-1252"
+        default:
+            return "utf8"
+        }
+    }
 }
 
 extension ContentType: Equatable {
@@ -136,6 +196,13 @@ extension ContentType: Equatable {
         case .pdf:
             switch rhs {
             case .pdf:
+                return true
+            default:
+                return false
+            }
+        case .email:
+            switch rhs {
+            case .email:
                 return true
             default:
                 return false
@@ -157,6 +224,13 @@ extension ContentType: Equatable {
         case .html:
             switch rhs {
             case .html:
+                return true
+            default:
+                return false
+            }
+        case .deliveryStatus:
+            switch rhs {
+            case .deliveryStatus:
                 return true
             default:
                 return false

@@ -46,4 +46,23 @@ public enum ContentDisposition {
             self = .other(string)
         }
     }
+
+    public var raw: String? {
+        switch self {
+        case .attachment(let fileName):
+            var output = "attachment"
+            if let name = fileName {
+                output += "; filename=\(name)"
+            }
+            return output
+        case .formData(let name):
+            return "form-data; name=\(name)"
+        case .inline:
+            return "inline"
+        case .none:
+            return nil
+        case .other(let other):
+            return other
+        }
+    }
 }

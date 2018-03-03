@@ -48,4 +48,23 @@ public enum ContentTransferEncoding {
         }
         return output
     }
+
+    public var raw: String? {
+        switch self {
+        case .base64:
+            return "BASE64"
+        case .binary:
+            return "BINARY"
+        case .eightbit:
+            return "8BIT"
+        case .none:
+            return nil
+        case .other(let other):
+            return other
+        case .quotedPrintable:
+            return "QUOTED-PRINTABLE"
+        case .sevenBit:
+            return "7BIT"
+        }
+    }
 }

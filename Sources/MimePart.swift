@@ -9,6 +9,22 @@ import Foundation
 import Swiftlier
 
 public struct MimePart: ErrorGenerating {
+    public struct MessageDeliveryStatus: ErrorGenerating {
+        public let originalRecipient: String?
+        public let finalRecipient: String
+        public let status: String
+
+        public var raw: String {
+            var output = ""
+            if let originalRecipient = self.originalRecipient {
+                output += "Original-Recipient: rfc822; \(originalRecipient)\r\n"
+            }
+            output += "Final-Recipient: rfc822; \(self.finalRecipient)"
+            output += "\r\nStatus: \(self.status)"
+            return output
+        }
+    }
+
     public enum Content {
         case pdf(Data)
         case png(Data)
@@ -18,6 +34,8 @@ public struct MimePart: ErrorGenerating {
         case plain(String)
         case zip(Data)
         case csv(Data)
+        case deliveryStatus(MessageDeliveryStatus)
+        case email(raw: String)
 
         case multipartFormData([MimePart])
         case multipartAlternative([MimePart])
@@ -28,12 +46,10 @@ public struct MimePart: ErrorGenerating {
         case none
     }
 
-    let name: String?
+    public let name: String?
     public let content: Content
-    let headers: [String:String]
-    let contentType: ContentType
-    let contentTransferEncoding: ContentTransferEncoding
-    let contentDisposition: ContentDisposition
+    public let headers: [String:String]
+    public var contentType: ContentType
 
     public var plain: String? {
         switch self.content {
@@ -44,11 +60,18 @@ public struct MimePart: ErrorGenerating {
         }
     }
 
-    init(data: Data) throws {
+    public init(data: Data) throws {
         guard let string = String(data: data, encoding: .ascii) else {
             throw MimePart.error("parsing", because: "data is not valid ascii")
         }
         try self.init(rawContents: string)
+    }
+
+    init(content: Content, name: String?) {
+        self.content = content
+        self.headers = [:]
+        self.contentType = content.contentType(withName: name)
+        self.name = name
     }
 
     init(body: Data, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition) throws {
@@ -104,16 +127,17 @@ public struct MimePart: ErrorGenerating {
         case let .multipartReport(boundary, reportType):
             let parts = try MimePart.parts(in: body, usingBoundary: boundary)
             self.content = .multipartReport(parts, type: reportType)
-
+        case .deliveryStatus:
+            self.content = .deliveryStatus(try .init(body: body))
+        case .email:
+            self.content = .email(raw: type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
         }
 
         self.headers = headers
         self.contentType = contentType
-        self.contentTransferEncoding = contentTransferEncoding
-        self.contentDisposition = contentDisposition
     }
 
-    init(rawContents: String, newline: String? = nil) throws {
+    public init(rawContents: String, newline: String? = nil) throws {
         var headers = [String:String]()
         var fullLine = ""
 
@@ -254,13 +278,43 @@ public struct MimePart: ErrorGenerating {
             else {
                 finalRange = range
             }
-            guard let string = String(data: data.subdata(in: finalRange), encoding: .ascii) else {
+            guard let string = String(data: data.subdata(in: finalRange), encoding: .ascii)
+                , let part = try? MimePart(rawContents: string, newline: newLine)
+                else
+            {
                 continue
             }
-            output.append(try MimePart(rawContents: string, newline: newLine))
+            output.append(part)
         }
 
         return output
+    }
+
+    public var raw: String {
+        var output = ""
+
+        var finalHeaders = self.headers
+        let (body, extraHeaders) = self.content.generateRaw(withName: self.name)
+        for (key, value) in extraHeaders {
+            finalHeaders[key] = value
+        }
+
+        for (key, value) in finalHeaders {
+            output += "\(key): \(value)\r\n"
+        }
+        output += "\r\n"
+        output += body
+        return output
+    }
+
+    public var rawBodyAndHeaders: (body: String, headers: [String:String]) {
+        let (body, extraHeaders) = self.content.generateRaw(withName: self.name)
+
+        var finalHeaders = self.headers
+        for (key, value) in extraHeaders {
+            finalHeaders[key] = value
+        }
+        return (body: body, headers: finalHeaders)
     }
 }
 
@@ -317,6 +371,180 @@ private extension MimePart {
             }
             return String(data: base64, encoding: characterEncoding)
         }
+    }
+}
+
+extension MimePart.Content {
+    func contentType(withName name: String?) -> ContentType {
+        switch self {
+        case .csv:
+            return .csv
+        case .deliveryStatus:
+            return .deliveryStatus
+        case .html:
+            return .html(.utf8)
+        case .jpg:
+            return .jpg
+        case .multipartAlternative:
+            return .multipartAlternative(boundary: "")
+        case .multipartFormData:
+            return .multipartFormData(boundary: "")
+        case .multipartMixed:
+            return .multipartMixed(boundary: "")
+        case .multipartRelated:
+            return .multipartRelated(boundary: "")
+        case .multipartReport(_, let type):
+            return .multipartReport(boundary: "", reportType: type)
+        case .none:
+            return .none
+        case .octetStream:
+            return .octetStream
+        case .pdf:
+            return .pdf
+        case .plain:
+            return .plainText(.utf8)
+        case .png:
+            return .png
+        case .zip:
+            return .zip(name: name)
+        case .email:
+            return .email
+        }
+    }
+
+    func generateRaw(withName name: String?) -> (body: String, extraHeaders: [String:String]) {
+        var extraHeaders = [String:String]()
+
+        let body: String
+        switch self {
+        case .csv(let data):
+            extraHeaders["Content-Type"] = ContentType.csv.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        case .deliveryStatus(let status):
+            extraHeaders["Content-Type"] = ContentType.deliveryStatus.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
+            body = status.raw.quotedPrintableEncoded
+        case .html(let html):
+            extraHeaders["Content-Type"] = ContentType.html(.utf8).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
+            body = html.quotedPrintableEncoded
+        case .email(let raw):
+            extraHeaders["Content-Type"] = ContentType.email.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
+            body = raw.quotedPrintableEncoded
+        case .jpg(let jpg):
+            extraHeaders["Content-Type"] = ContentType.jpg.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = jpg.base64
+        case .multipartAlternative(let parts):
+            let boundary = UUID().uuidString
+            extraHeaders["Content-Type"] = ContentType.multipartAlternative(boundary: boundary).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = parts.rawMIME(withBoundary: boundary)
+        case .multipartFormData(let parts):
+            let boundary = UUID().uuidString
+            extraHeaders["Content-Type"] = ContentType.multipartAlternative(boundary: boundary).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.none.raw
+            body = parts.rawMIME(withBoundary: boundary)
+        case .multipartMixed(let parts):
+            let boundary = UUID().uuidString
+            extraHeaders["Content-Type"] = ContentType.multipartMixed(boundary: boundary).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.none.raw
+            body = parts.rawMIME(withBoundary: boundary)
+        case .multipartRelated(let parts):
+            let boundary = UUID().uuidString
+            extraHeaders["Content-Type"] = ContentType.multipartRelated(boundary: boundary).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.none.raw
+            body = parts.rawMIME(withBoundary: boundary)
+        case .multipartReport(let parts, let type):
+            let boundary = UUID().uuidString
+            extraHeaders["Content-Type"] = ContentType.multipartReport(boundary: boundary, reportType: type).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.none.raw
+            body = parts.rawMIME(withBoundary: boundary)
+        case .none:
+            body = ""
+        case .octetStream(let data):
+            extraHeaders["Content-Type"] = ContentType.octetStream.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        case .pdf(let data):
+            extraHeaders["Content-Type"] = ContentType.pdf.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        case .plain(let plain):
+            extraHeaders["Content-Type"] = ContentType.plainText(.utf8).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
+            body = plain.quotedPrintableEncoded
+        case .png(let data):
+            extraHeaders["Content-Type"] = ContentType.png.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        case .zip(let data):
+            extraHeaders["Content-Type"] = ContentType.zip(name: name).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        }
+
+        return (body: body, extraHeaders: extraHeaders)
+    }
+}
+
+private extension MimePart.MessageDeliveryStatus {
+    init(body: String) throws {
+        var originalRecipient: String?
+        var finalRecipient: String?
+        var foundStatus: String?
+        for line in body.components(separatedBy: "\r\n") {
+            let parts = line.components(separatedBy: ":")
+            let remaining = parts[1...].joined(separator: ":").trimmingWhitespaceOnEnds
+            switch parts[0].lowercased() {
+            case "final-recipient":
+                finalRecipient = MimePart.MessageDeliveryStatus.recipient(from: remaining)
+            case "original-recipient":
+                originalRecipient = MimePart.MessageDeliveryStatus.recipient(from: remaining)
+            case "status":
+                foundStatus = remaining
+            default:
+                continue
+            }
+        }
+
+        guard let final = finalRecipient else {
+            throw MimePart.MessageDeliveryStatus.error("parsing", because: "the delivery status is missing a final recipient")
+        }
+
+        guard let status = foundStatus else {
+            throw MimePart.MessageDeliveryStatus.error("parsing", because: "the delivery status is missing a status")
+        }
+
+
+        self.finalRecipient = final
+        self.status = status
+        self.originalRecipient = originalRecipient
+    }
+
+    static func recipient(from string: String) -> String? {
+        let components = string.components(separatedBy: ";")
+        guard components.count >= 2 else {
+            return nil
+        }
+        return components[1].trimmingWhitespaceOnEnds
     }
 }
 
@@ -381,5 +609,78 @@ private extension String {
             .replacingOccurrences(of: "\n", with: "%0A")
         return next.removingPercentEncoding(using: encoding)
     }
+
+    var quotedPrintableEncoded: String {
+        var charCount = 0
+
+        var result = ""
+        result.reserveCapacity(self.count)
+
+        for character in self.utf8 {
+            switch character {
+            case 32...60, 62...126:
+                charCount += 1
+                result.append(String(UnicodeScalar(character)))
+            case 13:
+                continue
+            case 10:
+                if result.last == " " || result.last == "\t" {
+                    result.append("=\r\n")
+                    charCount = 0
+                } else {
+                    result.append("\r\n")
+                    charCount = 0
+                }
+            default:
+                if charCount > 72 {
+                    result.append("=\r\n")
+                    charCount = 0
+                }
+                result.append("=")
+                result.append(character.hexString().uppercased())
+                charCount+=3
+            }
+
+            if charCount == 75 {
+                charCount = 0
+                result.append("=\r\n")
+            }
+        }
+        return result
+    }
 }
 
+private extension UInt8 {
+    func hexString(padded: Bool = true) -> String {
+        let dict:[Character] = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
+        var result = ""
+
+        let c1 = Int(self >> 4)
+        let c2 = Int(self & 0xf)
+
+        if c1 == 0 && padded {
+            result.append(dict[c1])
+        } else if c1 > 0 {
+            result.append(dict[c1])
+        }
+        result.append(dict[c2])
+
+        if (result.count == 0) {
+            return "0"
+        }
+        return result
+    }
+}
+
+private extension Array where Element == MimePart {
+    func rawMIME(withBoundary boundary: String) -> String {
+        var output = ""
+        for part in self {
+            output += "--\(boundary)\r\n\(part.raw)\r\n"
+        }
+        if !output.isEmpty {
+            output += "--\(boundary)--"
+        }
+        return output
+    }
+}
