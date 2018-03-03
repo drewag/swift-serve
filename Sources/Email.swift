@@ -32,10 +32,6 @@ public struct Email {
                 headers["Reply-To"] = Email.sanitize(replyTo)
             }
 
-            if let returnPath = self.returnPath {
-                headers["Return-Path"] = Email.sanitize(returnPath)
-            }
-
             return (body, headers)
 
         }
@@ -58,6 +54,7 @@ public struct Email {
     let id: String
     public let subject: String
     public let recipient: String
+    public let returnPath: String?
     public let from: String
     public let body: String
     public var headers = [String:String]()
@@ -85,6 +82,7 @@ public struct Email {
         try build(&builder)
         (self.body, self.headers) = builder.bodyAndHeaders
         self.id = id
+        self.returnPath = builder.returnPath
     }
 
     @discardableResult
@@ -117,6 +115,9 @@ public struct Email {
                 let task = Process()
                 task.launchPath = "/bin/sh"
                 var command = "cat \(file.url.relativePath) | mail '\(self.recipient)' -s '\(self.subject)' -a 'From:\(self.from)'"
+                if let returnPath = self.returnPath {
+                    command += " -r \(returnPath)"
+                }
                 for (key,value) in self.headers {
                     command += " -a '\(key):\(value)'"
                 }
