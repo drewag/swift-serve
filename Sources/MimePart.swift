@@ -510,7 +510,16 @@ private extension MimePart.MessageDeliveryStatus {
         var originalRecipient: String?
         var finalRecipient: String?
         var foundStatus: String?
-        for line in body.components(separatedBy: "\r\n") {
+
+        let newLine: String
+        if body.contains("\r\n") {
+            newLine = "\r\n"
+        }
+        else {
+            newLine = "\n"
+        }
+
+        for line in body.components(separatedBy: newLine) {
             let parts = line.components(separatedBy: ":")
             let remaining = parts[1...].joined(separator: ":").trimmingWhitespaceOnEnds
             switch parts[0].lowercased() {
