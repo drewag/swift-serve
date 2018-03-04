@@ -6,7 +6,7 @@
 //
 
 public struct EmailMessage {
-    let part: MimePart
+    public let part: MimePart
 
     public var headers: [String:String] {
         return self.part.headers
@@ -14,6 +14,11 @@ public struct EmailMessage {
 
     public var subject: String? {
         return self.headers["subject"]
+    }
+
+    public var to: [NamedEmailAddress]? {
+        let raw = self.headers["to"]
+        return NamedEmailAddress.addresses(from: raw)
     }
 
     public var content: MimePart.Content {

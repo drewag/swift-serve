@@ -33,6 +33,7 @@ public struct MimePart: ErrorGenerating {
         case html(String)
         case plain(String)
         case zip(Data)
+        case gzip(Data)
         case csv(Data)
         case deliveryStatus(MessageDeliveryStatus)
         case email(raw: String)
@@ -112,6 +113,8 @@ public struct MimePart: ErrorGenerating {
             self.content = .octetStream(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
         case .zip:
             self.content = .zip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
+        case .gzip:
+            self.content = .gzip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
         case .multipartFormData(let boundary):
             let parts = try MimePart.parts(in: body, usingBoundary: boundary)
             self.content = .multipartFormData(parts)
@@ -232,6 +235,40 @@ public struct MimePart: ErrorGenerating {
         return foundParts.first(where: {$0.name == name})
     }
 
+    public func part(ofType type: ContentType) -> MimePart? {
+        if self.contentType == type {
+            return self
+        }
+
+        let childParts: [MimePart]
+        switch self.content {
+        case .csv, .deliveryStatus, .gzip, .html, .jpg, .none, .pdf, .png, .octetStream, .plain, .zip:
+            return nil
+        case .email(let raw):
+            guard let part = try? MimePart(rawContents: raw) else {
+                return nil
+            }
+            childParts = [part]
+        case .multipartAlternative(let parts):
+            childParts = parts
+        case .multipartFormData(let parts):
+            childParts = parts
+        case .multipartMixed(let parts):
+            childParts = parts
+        case .multipartRelated(let parts):
+            childParts = parts
+        case .multipartReport(let parts, type: _):
+            childParts = parts
+        }
+
+        for part in childParts {
+            if let found = part.part(ofType: type) {
+                return found
+            }
+        }
+        return nil
+    }
+
     public static func parts(in body: String, usingBoundary boundary: String) throws -> [MimePart] {
         let data = body.data(using: .ascii) ?? Data()
         return try self.parts(in: data, usingBoundary: boundary)
@@ -334,7 +371,9 @@ private extension MimePart {
     static func data(from string: String, transferEncoding: ContentTransferEncoding, characterEncoding: String.Encoding) -> Data {
         switch transferEncoding {
         case .base64:
-            let base64String = string.replacingOccurrences(of: "\n", with: "")
+            let base64String = string
+                .replacingOccurrences(of: "\r\n", with: "")
+                .replacingOccurrences(of: "\n", with: "")
             return Data(base64Encoded: base64String) ?? Data()
         default:
             return string.data(using: characterEncoding) ?? Data()
@@ -407,6 +446,8 @@ extension MimePart.Content {
             return .png
         case .zip:
             return .zip(name: name)
+        case .gzip:
+            return .gzip(name: name)
         case .email:
             return .email
         }
@@ -496,6 +537,11 @@ extension MimePart.Content {
             body = data.base64
         case .zip(let data):
             extraHeaders["Content-Type"] = ContentType.zip(name: name).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
+        case .gzip(let data):
+            extraHeaders["Content-Type"] = ContentType.gzip(name: name).raw
             extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
             extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
             body = data.base64

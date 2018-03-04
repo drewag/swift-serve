@@ -17,6 +17,7 @@ public enum ContentType {
     case html(String.Encoding)
     case plainText(String.Encoding)
     case zip(name: String?)
+    case gzip(name: String?)
     case deliveryStatus
     case email
 
@@ -92,9 +93,12 @@ public enum ContentType {
                 encoding = String.Encoding(string: encodingString)
             }
             self = .plainText(encoding)
-        case "application/zip", "application/x-zip-compressed", "application/gzip":
+        case "application/zip", "application/x-zip-compressed":
             let remaining = parts.joined(separator: ";")
             self = .zip(name: StructuredHeader.parse(remaining)["name"])
+        case "application/gzip":
+            let remaining = parts.joined(separator: ";")
+            self = .gzip(name: StructuredHeader.parse(remaining)["name"])
         case "application/pdf":
             self = .pdf
         case "application/octet-stream":
@@ -158,6 +162,12 @@ public enum ContentType {
             return "message/rfc822"
         case .zip(let name):
             var output = "application/zip"
+            if let name = name {
+                output += "; name=\(name)"
+            }
+            return output
+        case .gzip(let name):
+            var output = "application/gzip"
             if let name = name {
                 output += "; name=\(name)"
             }
@@ -273,6 +283,13 @@ extension ContentType: Equatable {
         case .zip:
             switch rhs {
             case .zip:
+                return true
+            default:
+                return false
+            }
+        case .gzip:
+            switch rhs {
+            case .gzip:
                 return true
             default:
                 return false
