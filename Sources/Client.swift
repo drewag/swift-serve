@@ -81,3 +81,13 @@ extension ClientResponse {
         return try? JSON(data: self.body)
     }
 }
+
+extension ErrorGenerating {
+    public static func error(_ doing: String, from response: ClientResponse) -> NetworkError? {
+        return self.error(doing, from: response.body, status: response.status)
+    }
+
+    public func error(_ doing: String, from response: ClientResponse) -> NetworkError? {
+        return self.error(doing, from: response.body, status: response.status)
+    }
+}
