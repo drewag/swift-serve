@@ -80,11 +80,15 @@ extension Request {
         return output
     }
 
-    public func createCookie(withName name: String, value: String, maxAge: TimeInterval) -> String {
+    public func createCookie(withName name: String, value: String, maxAge: TimeInterval, path: String? = nil) -> String {
         let key = name.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlFragmentAllowed)!
         let value = value.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlFragmentAllowed)!
         let date = Date(timeIntervalSinceNow: maxAge)
-        return "\(key)=\(value); Expires=\(date.gmtDateTime)"
+        var cookie = "\(key)=\(value); Expires=\(date.gmtDateTime)"
+        if let path = path {
+            cookie += "; Path=\(path)"
+        }
+        return cookie
     }
 
     public var mimePart: MimePart? {
