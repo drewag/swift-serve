@@ -50,6 +50,7 @@ extension Request {
         decoder.userInfo = userInfo
         decoder.userInfo.set(purposeDefault: purpose)
         decoder.userInfo.set(locationDefault: source)
+        decoder.dateDecodingStrategy = .formatted(ISO8601DateTimeFormatters.first!)
         return try? decoder.decode(Value.self, from: self.data)
     }
 
