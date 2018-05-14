@@ -8,8 +8,8 @@
 
 import Foundation
 import Swiftlier
-import TextTransformers
 import SQL
+import Stencil
 
 public protocol EmailSubscriber: TableStorable {
     var email: EmailAddress {get}
@@ -26,10 +26,10 @@ public protocol SubscribableEmail: AnySubscribableEmail {
     associatedtype Subscriber: EmailSubscriber
 
     static var field: Subscriber.Fields {get}
-    static var templatePath: Path {get}
+    static var templateName: String {get}
     var subject: String {get}
     var from: String {get}
-    func build(with builder: TemplateBuilder)
+    func build(with context: inout [String:Any])
 }
 
 public struct SubscribableEmailCenter: ErrorGenerating, Router {
@@ -49,18 +49,18 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
     public var routes: [Route] = []
 
     func unsubscribeRoute(request: Request) throws -> ResponseStatus {
-        return .handled(try request.response(htmlFromFile: "Views/UnsubscribeFromEmail.html", htmlBuild: { builder in
+        return .handled(try request.response(template: "Views/UnsubscribeFromEmail.html", build: { context in
             guard let token = request.formValues()["token"]?.removingPercentEncoding else {
-                builder["error"] = "This unsubscribe link is a bad link. Please contact support"
+                context["error"] = "This unsubscribe link is a bad link. Please contact support"
                 return
             }
 
             do {
                 let emailType = try self.unsubscribe(usingToken: token, using: request.databaseConnection)
-                builder["message"] = "Unsubscribed from \(emailType.emailName) emails successfully"
+                context["message"] = "Unsubscribed from \(emailType.emailName) emails successfully"
             }
             catch let error {
-                builder["error"] = request.error("unsubscribing", from: error).description
+                context["error"] = request.error("unsubscribing", from: error).description
             }
         }))
     }
@@ -69,14 +69,12 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
     public func send<Subscribable: SubscribableEmail>(_ email: Subscribable, to subscriber: Subscribable.Subscriber, for request: Request) throws -> HTML {
         let token = try self.token(for: subscriber, to: email, using: request.databaseConnection)
 
-        let html = try type(of: email).templatePath.url.relativePath
-            .map(FileContents())
-            .map(Template(build: { builder in
-                builder["base_url"] = request.baseURL.absoluteString
-                builder["unsubscribe_token"] = token?.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
-                email.build(with: builder)
-            }))
-            .string()
+        let environment = Environment(loader: FileSystemLoader(paths: ["."]))
+        var context = [String:Any]()
+        context["base_url"] = request.baseURL.absoluteString
+        context["unsubscribe_token"] = token?.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
+        email.build(with: &context)
+        let html = try environment.renderTemplate(name: Subscribable.templateName)
 
         guard token != nil else {
             return html

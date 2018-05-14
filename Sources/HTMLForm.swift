@@ -6,8 +6,8 @@
 //
 //
 
-import TextTransformers
 import Swiftlier
+import Stencil
 
 public protocol HTMLFormField: RawRepresentable, Hashable {
     static var action: String {get}
@@ -96,21 +96,17 @@ extension Request {
         return form
     }
 
-    public func responseStatus<Field>(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
-        return try self.responseStatus(htmlFromFiles: [filePath], status: status, headers: headers, form: form, htmlBuild: htmlBuild)
-    }
-
-    public func responseStatus<Field>(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, htmlBuild: ((TemplateBuilder) -> ())? = nil) throws -> ResponseStatus {
+    public func responseStatus<Field>(template name: String, status: HTTPStatus = .ok, headers: [String:String] = [:], form: HTMLForm<Field>, build: ((inout [String:Any]) -> ())? = nil) throws -> ResponseStatus {
         if let response = form.response {
             return response
         }
-        return .handled(try self.response(htmlFromFiles: filePaths, status: status, headers: headers, htmlBuild: { builder in
+        return .handled(try self.response(template: name, status: status, headers: headers, build: { context in
             for (key, value) in form.fields {
-                builder[key.rawValue] = value
+                context[key.rawValue] = value
             }
-            builder["error"] = form.error
-            builder["message"] = form.message
-            htmlBuild?(builder)
+            context["error"] = form.error
+            context["message"] = form.message
+            build?(&context)
         }))
     }
 }

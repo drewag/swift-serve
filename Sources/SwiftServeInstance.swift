@@ -9,7 +9,6 @@
 import CommandLineParser
 import Swiftlier
 import Foundation
-import TextTransformers
 import SQL
 import PostgreSQL
 
@@ -136,7 +135,7 @@ private extension SwiftServeInstance {
 
     static func loadDatabasePassword(for environment: Environment) -> String {
         let filePath = "database_password.string"
-        if let string = try? filePath.map(FileContents()).string()
+        if let string = try? String(contentsOfFile: filePath)
             , !string.isEmpty
         {
             return string
@@ -170,7 +169,7 @@ private extension SwiftServeInstance {
         case .production:
             break
         }
-        if let string = try? filePath.map(FileContents()).string()
+        if let string = try? String(contentsOfFile: filePath)
             , let data = string.data(using: .utf8)
             , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
         {

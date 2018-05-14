@@ -51,20 +51,14 @@ extension Server {
 
         if request.accepts(.html(.utf8)),
             let htmlResponse = (try? request.response(
-                htmlFromFiles: [
-                    "Views/Template/Header.html",
-                    "Views/Error.html",
-                    "Views/Template/Footer.html",
-                ],
+                template: "Views/Error.html",
                 status: status,
-                htmlBuild: { builder in
-                    builder["title"] = "Error Occured"
-                    builder["message"] = reportableError.description
-                    builder["doing"] = reportableError.doing
-                    builder["reason"] = reportableError.reason.because
-                    builder["alert_title"] = reportableError.alertDescription.title
-                    builder["alert_message"] = reportableError.alertDescription.message
-                    builder.buildValues(forKey: "stylesheets", withArray: ["/assets/css/error.css"], build: {$1["link"] = $0})
+                build: { context in
+                    context["message"] = reportableError.description
+                    context["doing"] = reportableError.doing
+                    context["reason"] = reportableError.reason.because
+                    context["alert_title"] = reportableError.alertDescription.title
+                    context["alert_message"] = reportableError.alertDescription.message
                 }
             ))
         {

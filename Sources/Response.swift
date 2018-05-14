@@ -1,6 +1,6 @@
 import Swiftlier
 import Foundation
-import TextTransformers
+import Stencil
 
 public protocol Response: CustomStringConvertible {
     var status: HTTPStatus {get}
@@ -59,24 +59,11 @@ extension Request {
         )
     }
 
-    public func response(htmlFromFile fileUrl: URL, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
-        return try self.response(htmlFromFiles: [fileUrl], headers: headers, htmlBuild: htmlBuild)
-    }
-
-    public func response(htmlFromFile filePath: String, status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
-        return try self.response(htmlFromFiles: [filePath], status: status, headers: headers, htmlBuild: htmlBuild)
-    }
-
-    public func response(htmlFromFiles fileUrls: [URL], status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
-        return try self.response(htmlFromFiles: fileUrls.map({$0.relativePath}), headers: headers, htmlBuild: htmlBuild)
-    }
-
-    public func response(htmlFromFiles filePaths: [String], status: HTTPStatus = .ok, headers: [String:String] = [:], htmlBuild: (TemplateBuilder) -> ()) throws -> Response {
-        return try self.response(textFromFiles: filePaths, contentType: "text/html", status: status, headers: headers, textBuild: htmlBuild)
-    }
-
-    public func response(textFromFiles filePaths: [String], contentType: String, status: HTTPStatus = .ok, headers: [String:String] = [:], textBuild: (TemplateBuilder) -> ()) throws -> Response {
-        let html = try filePaths.map(FileContents()).reduce(Separator()).map(Template(build: textBuild)).string()
+    public func response(template name: String, contentType: String =  "text/html; charset=utf-8", status: HTTPStatus = .ok, headers: [String:String] = [:], build: ((inout [String:Any]) -> ())? = nil) throws -> Response {
+        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        var context = [String:Any]()
+        build?(&context)
+        let html = try environment.renderTemplate(name: name, context: context)
         var headers = headers
         if headers["Content-Type"] == nil {
             headers["Content-Type"] = contentType
