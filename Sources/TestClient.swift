@@ -64,7 +64,7 @@ public class TestClient: Client {
 
 extension TestClientRequest {
     public func multiFormParts(usingBoundary boundary: String) -> [String:MimePart] {
-        let parts = (try? MimePart.parts(in: self.body, usingBoundary: boundary)) ?? []
+        let parts = (try? MimePart.parts(in: self.body, usingBoundary: boundary, characterEncoding: .isoLatin1)) ?? []
         return parts.reduce(into: [:], { result, part in
             if let name = part.name {
                 result[name] = part

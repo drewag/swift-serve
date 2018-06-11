@@ -112,6 +112,10 @@ public enum ContentType {
             self = .deliveryStatus
         case "message/rfc822":
             self = .email
+        case "image/jpg", "image/jpeg":
+            self = .jpg
+        case "image/png":
+            self = .png
         default:
             self = .other(string)
         }

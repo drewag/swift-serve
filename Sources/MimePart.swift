@@ -62,9 +62,9 @@ public struct MimePart: ErrorGenerating {
         }
     }
 
-    public init(data: Data) throws {
-        guard let string = String(data: data, encoding: .ascii) else {
-            throw MimePart.error("parsing", because: "data is not valid ascii")
+    public init(data: Data, characterEncoding: String.Encoding = .isoLatin1) throws {
+        guard let string = String(data: data, encoding: characterEncoding) else {
+            throw MimePart.error("parsing", because: "data is not valid")
         }
         try self.init(rawContents: string)
     }
@@ -76,9 +76,9 @@ public struct MimePart: ErrorGenerating {
         self.name = name
     }
 
-    init(body: Data, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition) throws {
-        guard let string = String(data: body, encoding: .ascii) else {
-            throw MimePart.error("parsing", because: "data is not valid ascii")
+    init(body: Data, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition, characterEncoding: String.Encoding = .isoLatin1) throws {
+        guard let string = String(data: body, encoding: characterEncoding) else {
+            throw MimePart.error("parsing", because: "data is not valid")
         }
         try self.init(body: string, headers: headers, contentType: contentType, contentTransferEncoding: contentTransferEncoding, contentDisposition: contentDisposition)
     }
@@ -92,6 +92,7 @@ public struct MimePart: ErrorGenerating {
         case .none, .other, .inline:
             self.name = nil
         }
+        print("Content Type: \(contentType)")
 
         switch contentType {
         case .other(let other):
@@ -99,25 +100,25 @@ public struct MimePart: ErrorGenerating {
         case .html(let encoding):
             self.content = .html(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .none:
-            self.content = .plain(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .plain(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .plainText(let encoding):
             self.content = .plain(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .csv:
-            self.content = .csv(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .csv(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .mp4:
-            self.content = .mp4(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .mp4(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .jpg:
-            self.content = .jpg(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .jpg(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .png:
-            self.content = .png(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .png(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .pdf:
-            self.content = .pdf(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .pdf(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .octetStream:
-            self.content = .octetStream(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .octetStream(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .zip:
-            self.content = .zip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .zip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .gzip:
-            self.content = .gzip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .gzip(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .multipartFormData(let boundary):
             let parts = try MimePart.parts(in: body, usingBoundary: boundary)
             self.content = .multipartFormData(parts)
@@ -136,11 +137,14 @@ public struct MimePart: ErrorGenerating {
         case .deliveryStatus:
             self.content = .deliveryStatus(try .init(body: body))
         case .email:
-            self.content = .email(raw: type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .utf8))
+            self.content = .email(raw: type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         }
 
         self.headers = headers
         self.contentType = contentType
+
+        print(self.name)
+        print(self.content)
     }
 
     public init(rawContents: String, newline: String? = nil) throws {
@@ -273,19 +277,19 @@ public struct MimePart: ErrorGenerating {
     }
 
     public static func parts(in body: String, usingBoundary boundary: String) throws -> [MimePart] {
-        let data = body.data(using: .utf8) ?? Data()
-        return try self.parts(in: data, usingBoundary: boundary)
+        let data = body.data(using: .isoLatin1) ?? Data()
+        return try self.parts(in: data, usingBoundary: boundary, characterEncoding: .isoLatin1)
     }
 
-    public static func parts(in data: Data, usingBoundary boundary: String) throws -> [MimePart] {
+    public static func parts(in data: Data, usingBoundary boundary: String, characterEncoding: String.Encoding) throws -> [MimePart] {
         let firstBoundaryRange: Range<Data.Index>
         let midBoundaryData: Data
         let endBoundaryData: Data
         let newLine: String
 
-        if let bothFirstBoundaryData = "--\(boundary)\r\n".data(using: .utf8)
-            , let bothMidBoundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8)
-            , let bothEndBoundaryData = "\r\n--\(boundary)--".data(using: .utf8)
+        if let bothFirstBoundaryData = "--\(boundary)\r\n".data(using: characterEncoding)
+            , let bothMidBoundaryData = "\r\n--\(boundary)\r\n".data(using: characterEncoding)
+            , let bothEndBoundaryData = "\r\n--\(boundary)--".data(using: characterEncoding)
             , let bothFirstBoundaryRange = data.range(of: bothFirstBoundaryData)
         {
             firstBoundaryRange = bothFirstBoundaryRange
@@ -293,9 +297,9 @@ public struct MimePart: ErrorGenerating {
             endBoundaryData = bothEndBoundaryData
             newLine = "\r\n"
         }
-        else if let singleFirstBoundaryData = "--\(boundary)\n".data(using: .utf8)
-            , let singleMidBoundaryData = "\n--\(boundary)\n".data(using: .utf8)
-            , let singleEndBoundaryData = "\n--\(boundary)--".data(using: .utf8)
+        else if let singleFirstBoundaryData = "--\(boundary)\n".data(using: characterEncoding)
+            , let singleMidBoundaryData = "\n--\(boundary)\n".data(using: characterEncoding)
+            , let singleEndBoundaryData = "\n--\(boundary)--".data(using: characterEncoding)
             , let singleFirstBoundaryRange = data.range(of: singleFirstBoundaryData)
         {
             firstBoundaryRange = singleFirstBoundaryRange
@@ -318,7 +322,7 @@ public struct MimePart: ErrorGenerating {
             else {
                 finalRange = range
             }
-            guard let string = String(data: data.subdata(in: finalRange), encoding: .utf8)
+            guard let string = String(data: data.subdata(in: finalRange), encoding: characterEncoding)
                 , let part = try? MimePart(rawContents: string, newline: newLine)
                 else
             {
