@@ -35,6 +35,7 @@ public struct MimePart: ErrorGenerating {
         case zip(Data)
         case gzip(Data)
         case csv(Data)
+        case mp4(Data)
         case deliveryStatus(MessageDeliveryStatus)
         case email(raw: String)
 
@@ -103,6 +104,8 @@ public struct MimePart: ErrorGenerating {
             self.content = .plain(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .csv:
             self.content = .csv(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
+        case .mp4:
+            self.content = .mp4(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
         case .jpg:
             self.content = .jpg(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .ascii))
         case .png:
@@ -242,7 +245,7 @@ public struct MimePart: ErrorGenerating {
 
         let childParts: [MimePart]
         switch self.content {
-        case .csv, .deliveryStatus, .gzip, .html, .jpg, .none, .pdf, .png, .octetStream, .plain, .zip:
+        case .csv, .deliveryStatus, .gzip, .html, .jpg, .none, .pdf, .png, .octetStream, .plain, .zip, .mp4:
             return nil
         case .email(let raw):
             guard let part = try? MimePart(rawContents: raw) else {
@@ -424,6 +427,8 @@ extension MimePart.Content {
             return .html(.utf8)
         case .jpg:
             return .jpg
+        case .mp4:
+            return .mp4
         case .multipartAlternative:
             return .multipartAlternative(boundary: "")
         case .multipartFormData:
@@ -483,6 +488,11 @@ extension MimePart.Content {
             extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
             extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
             body = jpg.base64
+        case .mp4(let data):
+            extraHeaders["Content-Type"] = ContentType.mp4.raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.base64.raw
+            body = data.base64
         case .multipartAlternative(let parts):
             let boundary = UUID().uuidString
             extraHeaders["Content-Type"] = ContentType.multipartAlternative(boundary: boundary).raw
