@@ -39,11 +39,16 @@ extension Router {
         }
 
         var output = ""
+        var lastWasSlash = false
         for (index, character) in path.enumerated() {
             guard index != 0 else {
                 continue
             }
+            guard !lastWasSlash || (character != "/") else {
+                continue
+            }
             output.append(character)
+            lastWasSlash = character == "/"
         }
         return output
     }
