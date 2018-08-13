@@ -92,7 +92,7 @@ public struct MimePart: ErrorGenerating {
         case .none, .other, .inline:
             self.name = nil
         }
-        print("Content Type: \(contentType)")
+//        print("Content Type: \(contentType)")
 
         switch contentType {
         case .other(let other):
@@ -143,8 +143,8 @@ public struct MimePart: ErrorGenerating {
         self.headers = headers
         self.contentType = contentType
 
-        print(self.name)
-        print(self.content)
+//        print(self.name)
+//        print(self.content)
     }
 
     public init(rawContents: String, newline: String? = nil) throws {

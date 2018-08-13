@@ -74,8 +74,24 @@ extension Request {
             }
         }
 
-        if let string = self.string {
-            output.append(string, parsedWith: FormUrlEncoded.self)
+        switch self.contentType {
+        case .multipartFormData:
+            if let part = self.mimePart {
+                switch part.content {
+                case .multipartFormData(let parts):
+                    for part in parts {
+                        if let name = part.name, let plain = part.plain {
+                            output[name] = plain
+                        }
+                    }
+                default:
+                    break
+                }
+            }
+        default:
+            if let string = self.string {
+                output.append(string, parsedWith: FormUrlEncoded.self)
+            }
         }
 
         return output
