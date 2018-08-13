@@ -46,8 +46,8 @@ extension Request {
         )
     }
 
-    public func response(redirectingTo to: String) -> Response {
-        return self.response(status: .movedPermanently, headers: ["Location": "\(to)"])
+    public func response(redirectingTo to: String, permanently: Bool) -> Response {
+        return self.response(status: permanently ? .movedPermanently : .temporaryRedirect, headers: ["Location": "\(to)"])
     }
 
     public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
