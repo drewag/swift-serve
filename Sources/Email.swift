@@ -173,7 +173,7 @@ private extension Email.Builder {
 
 private extension Email {
     static func sanitize(_ parameter: String) -> String {
-        return parameter.replacingOccurrences(of: "'", with: "\\'")
+        return parameter.replacingOccurrences(of: "'", with: "’")
     }
 
     static func sanitize(_ parameter: String?) -> String? {
