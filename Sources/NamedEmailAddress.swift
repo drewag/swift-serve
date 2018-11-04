@@ -17,7 +17,7 @@ public struct NamedEmailAddress: CustomStringConvertible, Codable {
         }
 
         let components = string.components(separatedBy: ",")
-        return components.map({$0.trimmingWhitespaceOnEnds}).flatMap({NamedEmailAddress($0)})
+        return components.map({$0.trimmingWhitespaceOnEnds}).compactMap({NamedEmailAddress($0)})
     }
 
     private init?(rawName: String?, rawEmail: String) {
