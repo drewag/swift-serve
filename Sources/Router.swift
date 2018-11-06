@@ -13,11 +13,21 @@ public enum ResponseStatus {
 
 public protocol Router {
     var routes: [Route] {get}
+
+    func preprocess(request: Request, context: inout [String:Any]) throws
+    func postprocess(request: Request, context: inout [String:Any]) throws
 }
 
 extension Router {
+    public func preprocess(request: Request, context: inout [String:Any]) throws {}
+    public func postprocess(request: Request, context: inout [String:Any]) throws {}
+
     public func route(request: Request, to path: String) throws -> ResponseStatus {
         let path = self.fix(path: path)
+
+        var request = request
+        request.preprocessStack.append(self.preprocess)
+        request.postprocessStack.append(self.postprocess)
 
         for route in self.routes {
             if route.pathComponent.matches(path: path, using: request.method) {
@@ -52,7 +62,6 @@ extension Router {
         }
         return output
     }
-
 }
 
 struct InPlaceRouter: Router {

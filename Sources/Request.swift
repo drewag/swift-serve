@@ -12,6 +12,9 @@ public protocol Request: CustomStringConvertible, ErrorGenerating {
     var host: String {get}
     var ip: String {get}
 
+    var preprocessStack: RequestProcessStack {get set}
+    var postprocessStack: RequestProcessStack {get set}
+
     func response(withData data: Data, status: HTTPStatus, headers: [String:String]) -> Response
     func response(withFileAt path: String, status: HTTPStatus, headers: [String:String]) throws -> Response
 }

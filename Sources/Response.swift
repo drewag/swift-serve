@@ -62,7 +62,9 @@ extension Request {
     public func response(template name: String, contentType: String =  "text/html; charset=utf-8", status: HTTPStatus = .ok, headers: [String:String] = [:], build: ((inout [String:Any]) -> ())? = nil) throws -> Response {
         let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
         var context = [String:Any]()
+        try self.preprocessStack.process(request: self, context: &context)
         build?(&context)
+        try self.postprocessStack.process(request: self, context: &context)
         let html = try environment.renderTemplate(name: name, context: context)
         var headers = headers
         if headers["Content-Type"] == nil {

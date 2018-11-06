@@ -19,6 +19,9 @@ public class TestRequest: Request {
     public let host: String = "localhost"
     public let ip: String = "0.0.0.0"
 
+    public var preprocessStack = RequestProcessStack()
+    public var postprocessStack = RequestProcessStack()
+
     public init(
         connection: Connection,
         method: HTTPMethod,
