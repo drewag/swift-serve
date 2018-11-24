@@ -4,36 +4,45 @@ import Stencil
 
 public protocol Response: CustomStringConvertible {
     var status: HTTPStatus {get}
+    var error: ReportableError? {get}
     var headers: [String:String] {get set}
 }
 
 extension Request {
-    public func response(withData data: Data, status: HTTPStatus) -> Response {
-        return self.response(withData: data, status: status, headers: [:])
+    public func response(withData data: Data, status: HTTPStatus, error: ReportableError? = nil) -> Response {
+        return self.response(withData: data, status: status, error: error, headers: [:])
     }
 
-    public func response(withFileAt path: String, status: HTTPStatus) throws -> Response {
-        return try self.response(withFileAt: path, status: status, headers: [:])
+    public func response(withFileAt path: String, status: HTTPStatus, error: ReportableError? = nil) throws -> Response {
+        return try self.response(withFileAt: path, status: status, error: error, headers: [:])
     }
 
-    public func response(withFileAt url: URL, status: HTTPStatus) throws -> Response {
-        return try self.response(withFileAt: url.relativePath, status: status, headers: [:])
+    public func response(withData data: Data, status: HTTPStatus, headers: [String:String]) -> Response {
+        return self.response(withData: data, status: status, error: nil, headers: headers)
     }
 
-    public func response(status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
-        return self.response(withData: Data(), status: status, headers: headers)
+    public func response(withFileAt path: String, status: HTTPStatus, headers: [String:String]) throws -> Response {
+        return try self.response(withFileAt: path, status: status, error: nil, headers: headers)
     }
 
-    public func response(body: Data, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
-        return self.response(withData: body, status: status, headers: headers)
+    public func response(withFileAt url: URL, status: HTTPStatus, error: ReportableError? = nil, headers: [String:String] = [:]) throws -> Response {
+        return try self.response(withFileAt: url.relativePath, status: status, error: error, headers: headers)
     }
 
-    public func response(body: String, status: HTTPStatus = .ok, headers: [String:String] = [:]) -> Response {
+    public func response(status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) -> Response {
+        return self.response(withData: Data(), status: status, error: error, headers: headers)
+    }
+
+    public func response(body: Data, status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) -> Response {
+        return self.response(withData: body, status: status, error: error, headers: headers)
+    }
+
+    public func response(body: String, status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) -> Response {
         let data = body.data(using: .utf8) ?? Data()
-        return self.response(withData: data, status: status, headers: headers)
+        return self.response(withData: data, status: status, error: error, headers: headers)
     }
 
-    public func response<E: Encodable>(json: E, purpose: CodingPurpose = .create, userInfo: [CodingUserInfoKey:Any] = [:], status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+    public func response<E: Encodable>(json: E, purpose: CodingPurpose = .create, userInfo: [CodingUserInfoKey:Any] = [:], status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) throws -> Response {
         let encoder = JSONEncoder()
         encoder.userInfo = userInfo
         encoder.userInfo.set(purposeDefault: purpose)
@@ -42,6 +51,7 @@ extension Request {
         return self.response(
             withData: try encoder.encode(json),
             status: status,
+            error: error,
             headers: headers
         )
     }
@@ -50,11 +60,12 @@ extension Request {
         return self.response(status: permanently ? .movedPermanently : .temporaryRedirect, headers: ["Location": "\(to)"])
     }
 
-    public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, headers: [String:String] = [:]) throws -> Response {
+    public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) throws -> Response {
         let data = try JSONSerialization.data(withJSONObject: object, options: [])
         return self.response(
             withData: data,
             status: status,
+            error: error,
             headers: headers
         )
     }
@@ -79,6 +90,11 @@ extension Request {
 
 extension Response  {
     public var description: String {
-        return self.status.description
+        if let error = self.error {
+            return "\(self.status.description)\n\(error)"
+        }
+        else {
+            return self.status.description
+        }
     }
 }

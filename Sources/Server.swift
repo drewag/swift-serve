@@ -66,10 +66,10 @@ extension Server {
         }
         else {
             do {
-                return try request.response(json: reportableError, status: status)
+                return try request.response(json: reportableError, status: status, error: reportableError)
             }
             catch {
-                return request.response(body: reportableError.description, status: status)
+                return request.response(body: reportableError.description, status: status, error: reportableError)
             }
         }
     }

@@ -39,39 +39,43 @@ public class TestRequest: Request {
         self.cookies = cookies
     }
 
-    public func response(withData data: Data, status: HTTPStatus, headers: [String:String]) -> Response {
-        return TestDataResponse(status: status, data: data, headers: headers)
+    public func response(withData data: Data, status: HTTPStatus, error: ReportableError?, headers: [String:String]) -> Response {
+        return TestDataResponse(status: status, data: data, error: error, headers: headers)
     }
 
-    public func response(withFileAt path: String, status: HTTPStatus, headers: [String:String]) throws -> Response {
-        return TestFileResponse(status: status, filePath: path, headers: headers)
+    public func response(withFileAt path: String, status: HTTPStatus, error: ReportableError?, headers: [String:String]) throws -> Response {
+        return TestFileResponse(status: status, filePath: path, error: error, headers: headers)
     }
 }
 
 public class TestDataResponse: Response {
     public let status: HTTPStatus
     public let data: Data
+    public let error: ReportableError?
     public var headers: [String:String] = [:]
 
     public var json: JSON? {
         return try? JSON(data: data)
     }
 
-    init(status: HTTPStatus, data: Data, headers: [String:String]) {
+    init(status: HTTPStatus, data: Data, error: ReportableError?, headers: [String:String]) {
         self.status = status
         self.data = data
         self.headers = headers
+        self.error = error
     }
 }
 
 public class TestFileResponse: Response {
     public let status: HTTPStatus
     public let filePath: String
+    public let error: ReportableError?
     public var headers: [String:String]
 
-    init(status: HTTPStatus, filePath: String, headers: [String:String]) {
+    init(status: HTTPStatus, filePath: String, error: ReportableError?, headers: [String:String]) {
         self.status = status
         self.filePath = filePath
         self.headers = headers
+        self.error = error
     }
 }
