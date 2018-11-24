@@ -69,12 +69,11 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
     public func send<Subscribable: SubscribableEmail>(_ email: Subscribable, to subscriber: Subscribable.Subscriber, for request: Request) throws -> HTML {
         let token = try self.token(for: subscriber, to: email, using: request.databaseConnection)
 
-        let environment = Environment(loader: FileSystemLoader(paths: ["."]))
-        var context = [String:Any]()
-        context["base_url"] = request.baseURL.absoluteString
-        context["unsubscribe_token"] = token?.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
-        email.build(with: &context)
-        let html = try environment.renderTemplate(name: Subscribable.templateName)
+        let html = try String(renderedFromTemplate: Subscribable.templateName) { context in
+            context["base_url"] = request.baseURL.absoluteString
+            context["unsubscribe_token"] = token?.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
+            email.build(with: &context)
+        }
 
         guard token != nil else {
             return html
