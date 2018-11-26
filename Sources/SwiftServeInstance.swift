@@ -35,6 +35,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
+    fileprivate let blogConfiguration: BlogConfiguration?
+    fileprivate let blogRouter: BlogRouter?
     fileprivate let extraSchemes: [Scheme]
     fileprivate let productionPromise: OptionPromise
     fileprivate let testPromise: OptionPromise
@@ -69,6 +71,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     public init(
         domain: String,
+        blogConfiguration: BlogConfiguration? = nil,
         allowCrossOriginRequests: Bool = false,
         databaseChanges: [DatabaseChange],
         routes: [Route],
@@ -81,11 +84,31 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.productionPromise = parser.option(named: "prod")
         self.testPromise = parser.option(named: "test")
         self.allowCrossOriginRequests = allowCrossOriginRequests
+        self.blogConfiguration = blogConfiguration
 
+        var routes = routes
+        if let config = blogConfiguration {
+            let blogRouter = BlogRouter(configuration: config)
+            var rootEndpoint = config.rootEndpoint
+            if rootEndpoint.hasPrefix("/") {
+                rootEndpoint.remove(at: rootEndpoint.startIndex)
+            }
+            if rootEndpoint.isEmpty {
+                routes.insert(Route.any(router: blogRouter), at: 0)
+            }
+            else {
+                routes.insert(Route.any(rootEndpoint, router: blogRouter), at: 0)
+            }
+            self.blogRouter = blogRouter
+        }
+        else {
+            self.blogRouter = nil
+        }
+
+        self.customizeCommandLineParser = customizeCommandLineParser
         self.databaseChanges = databaseChanges
         self.domain = domain
         self.routes = routes
-        self.customizeCommandLineParser = customizeCommandLineParser
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
@@ -240,6 +263,10 @@ private extension SwiftServeInstance {
                 try parser.parse()
 
                 let connection = PostgreSQLConnection()
+
+                let core = try SwiftServeInternal(from: connection)
+                try self.blogRouter?.migrate(from: core, in: connection)
+
                 let currentVersion = try SwiftServe.getVersion(from: connection)
                 var newVersion = currentVersion
 
@@ -281,6 +308,7 @@ private extension SwiftServeInstance {
             try server.start()
         }
 
+        self.blogRouter?.addCommands(to: self.commandLineParser)
         self.customizeCommandLineParser?(self.commandLineParser)
     }
 }

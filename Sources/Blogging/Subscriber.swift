@@ -1,0 +1,84 @@
+//
+//  Subscriber.swift
+//  drewag.me
+//
+//  Created by Andrew J Wagner on 1/1/17.
+//
+//
+
+import Foundation
+import SQL
+import Swiftlier
+
+public struct Subscriber: TableStorable, ErrorGenerating, Codable {
+    public static let tableName = "subscribers"
+
+    public typealias CodingKeys = Fields
+
+    public enum Fields: String, Field, CodingKey {
+        case email
+        case unsubscribeToken = "unsubscribe_token"
+        case subscribed = "subscribed_date"
+
+        public var sqlFieldSpec: FieldSpec? {
+            switch self {
+            case .email:
+                return self.spec(dataType: .string(length: 100), allowNull: false, isUnique: true)
+            case .unsubscribeToken:
+                return self.spec(dataType: .string(length: 16), allowNull: false, isUnique: true)
+            case .subscribed:
+                return self.spec(dataType: .date, allowNull: false)
+            }
+        }
+    }
+
+    let email: String
+    let unsubscribeToken: String
+    let subscribed: Date
+
+    static func generateUnsubscribeToken() -> String {
+        return self.generateRandomString(ofLength: 16)
+    }
+
+    static func select(forEmail email: String) -> SelectQuery<Subscriber> {
+        return self.select().filtered(self.field(.email) == email.lowercased())
+    }
+
+    static func select(forUnsubscribeToken token: String) -> SelectQuery<Subscriber> {
+        return self.select().filtered(self.field(.unsubscribeToken) == token)
+    }
+
+    init(email: String, unsubscribeToken: String, subscribed: Date) {
+        self.email = email.lowercased()
+        self.unsubscribeToken = unsubscribeToken
+        self.subscribed = subscribed
+    }
+
+    init(email: String, unsubscribeToken: String) {
+        self.init(email: email, unsubscribeToken: unsubscribeToken, subscribed: Date())
+    }
+
+    var justThisInstance: Predicate {
+        return type(of: self).field(.email) == self.email
+    }
+}
+
+private extension Subscriber {
+    static func generateRandomString(ofLength length: Int) -> String {
+        let allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        let allowedCharsCount = UInt32(allowedChars.count)
+
+        var output = ""
+        for _ in 0 ..< length {
+            #if os(Linux)
+                let randomNumber = Int(random()) % Int(allowedCharsCount)
+            #else
+                let randomNumber = Int(arc4random_uniform(allowedCharsCount))
+            #endif
+            let index = allowedChars.index(allowedChars.startIndex, offsetBy: randomNumber)
+            let newCharacter = allowedChars[index]
+            output.append(newCharacter)
+        }
+        return output
+    }
+}
