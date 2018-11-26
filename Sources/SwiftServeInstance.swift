@@ -134,7 +134,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
             domain = "http://localhost"
         }
         else {
-            domain = request.host
+            domain = "https://\(request.host)"
         }
 
         if let port = request.baseURL.port {
