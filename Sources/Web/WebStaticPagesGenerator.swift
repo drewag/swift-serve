@@ -41,11 +41,16 @@ private extension WebStaticPagesGenerator {
         func locations(from directory: DirectoryPath, path: String) throws -> [String] {
             var output = [String]()
             for existing in try directory.contents() {
-                guard !existing.name.hasPrefix(".") else {
+                guard existing.name != "base", !existing.name.hasPrefix(".") else {
                     continue
                 }
                 if let file = existing.file {
-                    output.append(path + "/" + file.basename)
+                    if file.name == "index" {
+                        output.append(path)
+                    }
+                    else {
+                        output.append(path + "/" + file.name)
+                    }
                 }
                 else if let directory = existing.directory {
                     output += try locations(from: directory, path: path + "/" + directory.name)

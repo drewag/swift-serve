@@ -10,11 +10,21 @@ import Swiftlier
 struct PagesRouter: Router {
     let routes: [Route] = [
         .getWithParam(consumeEntireSubPath: true, handler: { (request, pagePath: String) in
-            let template = "Views/Pages/\(pagePath).html"
-            guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
+            guard !pagePath.hasSuffix("base") else {
                 return .unhandled
             }
-            return .handled(try request.response(template: template))
+
+            let template = "Views/Pages/\(pagePath).html"
+            if nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file {
+                return .handled(try request.response(template: template))
+            }
+
+            let index = "Views/Pages/\(pagePath)/index.html"
+            if nil != FileSystem.default.workingDirectory.subPath(byAppending: index).file {
+                return .handled(try request.response(template: index))
+            }
+
+            return .unhandled
         }),
     ]
 }
