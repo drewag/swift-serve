@@ -57,6 +57,13 @@ public class ParameterizedBlogRouter<Param>: ParameterizedRouter, AnyBlogRouter 
 class BlogRouter: ConcreteBlogRouter {
     override var routes: [Route] {
         return [
+            .get("feed", handler: { request in
+                let template = "Generated/blog/feed.xml"
+                guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
+                    return .unhandled
+                }
+                return .handled(try request.response(template: template, contentType: "application/atom+xml"))
+            }),
             .any("subscribers", router: SubscribersRouter(configuration: self.configuration)),
             .get("", handler: { request in
                 return .handled(try request.response(template: "Views/Blog/Home.html"))
@@ -107,7 +114,6 @@ class BlogRouter: ConcreteBlogRouter {
     }
 
     func addCommands(to parser: Parser) {
-        parser.command(named: "regenerate", handler: RegenerateCommand.handler(configuration: self.configuration))
         parser.command(named: "publish", handler: PublishCommand.handler)
         parser.command(named: "notify", handler: NotifyCommand.handler(configuration: self.configuration))
     }

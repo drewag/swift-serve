@@ -6,10 +6,10 @@
 //
 //
 
-public struct AssetRouter: Router {
-    public init() {}
+struct AssetRouter: Router {
+    init() {}
 
-    public var routes: [Route] {
+    var routes: [Route] {
         return [
             .getWithParam(consumeEntireSubPath: true, handler: { (request, path: String) in
                 let filePath = "Assets/\(path)"

@@ -36,13 +36,13 @@ struct SubscribersRouter: Router, ErrorGenerating {
                     return nil
                 })
                 return try request.responseStatus(
-                    template: "Views/NewSubscriber.html",
+                    template: "Views/Blog/NewSubscriber.html",
                     form: form
                 )
             }),
             .get("unsubscribe", handler: { request in
                 return .handled(try request.response(
-                    template: "Views/Unsubscribe.html",
+                    template: "Views/Blog/Unsubscribe.html",
                     build: { context in
                         do {
                             let service = SubscriberService(connection: request.databaseConnection, configuration: self.configuration)

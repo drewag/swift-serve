@@ -6,10 +6,10 @@
 //
 //
 
-public struct FaviconRouter: Router {
-    public init() {}
+struct FaviconRouter: Router {
+    init() {}
 
-    public let routes: [Route] = [
+    let routes: [Route] = [
         .get("android-chrome-192x192.png", handler: { request in
             return .handled(try request.response(withFileAt: "Assets/img/favicons/android-chrome-192x192.png", status: .ok))
         }),

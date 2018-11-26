@@ -51,7 +51,7 @@ extension Server {
 
         if request.accepts(.html(.utf8)),
             let htmlResponse = (try? request.response(
-                template: "Views/Error.html",
+                template: "Views/Errors/Unhandled.html",
                 status: status,
                 build: { context in
                     context["message"] = reportableError.description

@@ -35,6 +35,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
+    fileprivate let htmlEnabled: Bool
     fileprivate let blogConfiguration: BlogConfiguration?
     fileprivate let blogRouter: BlogRouter?
     fileprivate let extraSchemes: [Scheme]
@@ -71,6 +72,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     public init(
         domain: String,
+        htmlEnabled: Bool = false,
+        assetsEnabled: Bool = true,
         blogConfiguration: BlogConfiguration? = nil,
         allowCrossOriginRequests: Bool = false,
         databaseChanges: [DatabaseChange],
@@ -84,6 +87,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.productionPromise = parser.option(named: "prod")
         self.testPromise = parser.option(named: "test")
         self.allowCrossOriginRequests = allowCrossOriginRequests
+        self.htmlEnabled = htmlEnabled
         self.blogConfiguration = blogConfiguration
 
         var routes = routes
@@ -104,6 +108,16 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         else {
             self.blogRouter = nil
         }
+        if assetsEnabled {
+            routes.insert(.get("assets", router: AssetRouter()), at: 0)
+        }
+        if htmlEnabled {
+            routes.insert(.get(router: WebBasicsRouter()), at: 0)
+            routes.insert(.get(router: FaviconRouter()), at: 0)
+            routes.append(.get(router: PagesRouter()))
+            // 404
+            routes.append(.any(router: WebErrorRouter()))
+        }
 
         self.customizeCommandLineParser = customizeCommandLineParser
         self.databaseChanges = databaseChanges
@@ -112,6 +126,21 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
+    }
+
+    public func preprocess(request: Request, context: inout [String : Any]) throws {
+        var domain: String
+        if request.host == "localhost" {
+            domain = "http://localhost"
+        }
+        else {
+            domain = request.host
+        }
+
+        if let port = request.baseURL.port {
+            domain += ":\(port)"
+        }
+        context["domain"] = domain
     }
 
     public func run() {
@@ -306,6 +335,16 @@ private extension SwiftServeInstance {
                 }
             }
             try server.start()
+        }
+
+        if self.htmlEnabled {
+            var generators: [StaticPagesGenerator] = [
+                WebStaticPagesGenerator()
+            ]
+            if let config = self.blogConfiguration {
+                generators.append(BlogStaticPagesGenerator(configuration: config))
+            }
+            self.commandLineParser.command(named: "regenerate", handler: RegenerateCommand.handler(generators: generators))
         }
 
         self.blogRouter?.addCommands(to: self.commandLineParser)

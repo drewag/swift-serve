@@ -37,7 +37,7 @@ class PublishedPost: Post {
     }
 
     var permanentRelativePath: String {
-        return "/posts/\(self.publishedYearString)/\(self.publishedMonthString)/\(self.publishedDayString)/\(self.urlTitle)"
+        return "posts/\(self.publishedYearString)/\(self.publishedMonthString)/\(self.publishedDayString)/\(self.urlTitle)"
     }
 
     var permanentRelativeImagePath: String {

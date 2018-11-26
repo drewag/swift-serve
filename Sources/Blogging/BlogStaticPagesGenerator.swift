@@ -10,7 +10,7 @@ import Foundation
 import Swiftlier
 import Stencil
 
-class StaticPagesGenerator {
+class BlogStaticPagesGenerator: StaticPagesGenerator {
     fileprivate let environment = Environment(loader: FileSystemLoader(paths: ["."]))
 
     let configuration: BlogConfiguration
@@ -27,58 +27,19 @@ class StaticPagesGenerator {
         ]
     }
 
-    func generate(forDomain domain: String) throws {
-        self.removeDirectory(at: "Generated-working")
-        self.createDirectory(at: "Generated-working")
-        try self.generateSiteDownPage()
+    override func generate(forDomain domain: String) throws {
+        try super.generate(forDomain: domain)
+
         try self.generateIndex()
         try self.generatePosts()
         try self.generateArchive()
         try self.generateTagDirectories()
         try self.generateSitemap(forDomain: domain)
         try self.generateAtomFeed(forDomain: domain)
-
-        print("Replacing production version...", terminator: "")
-        self.removeDirectory(at: "Generated")
-        try self.moveItem(from: "Generated-working", to: "Generated")
-        print("done")
     }
 }
 
-private extension StaticPagesGenerator {
-    func removeDirectory(at path: String) {
-        let _ = try? FileSystem.default.path(from: URL(fileURLWithPath: path)).directory?.delete()
-    }
-
-    func createDirectory(at path: String) {
-        let _ = try? FileSystem.default.path(from: URL(fileURLWithPath: path)).createDirectory()
-    }
-
-    func write(_ html: String, to path: String) throws {
-        let _  = try FileSystem.default.path(from: URL(fileURLWithPath: path)).createFile(containing: html.data(using: .utf8) ?? Data(), canOverwrite: true)
-    }
-
-    func moveItem(from: String, to: String) throws {
-        let from = FileSystem.default.path(from: URL(fileURLWithPath: from))
-        let to = FileSystem.default.path(from: URL(fileURLWithPath: to))
-        let _ = try from.existing?.move(to: to, canOverwrite: true)
-    }
-
-    func copyFile(from: String, to: String) throws {
-        let from = FileSystem.default.path(from: URL(fileURLWithPath: from))
-        let to = FileSystem.default.path(from: URL(fileURLWithPath: to))
-        let _ = try from.file?.copy(to: to, canOverwrite: true)
-    }
-
-    func generateSiteDownPage() throws {
-        print("Generating site down page...", terminator: "")
-        var context = self.defaultContext
-        context["css"] = (try? String(contentsOfFile: "Assets/css/main.css")) ?? nil
-        let html = try self.environment.renderTemplate(name: "Views/SiteDown.html", context: context)
-        try self.write(html, to: "Generated-working/site-down.html")
-        print("done")
-    }
-
+private extension BlogStaticPagesGenerator {
     func generateIndex() throws {
         print("Generating index...", terminator: "")
         let (featured, recent) = try self.postsService.loadMainPosts()
@@ -206,13 +167,13 @@ private extension StaticPagesGenerator {
                 }
             }
             return [
-                "link": "/blog/posts/tags/\(tag.link)",
+                "link": "posts/tags/\(tag.link)",
                 "modified": modified.railsDate,
             ]
         }) as [[String:String]]
 
-        let xml = try self.environment.renderTemplate(name: "Views/sitemap.xml", context: context)
-        try self.write(xml, to: "Generated-working/sitemap.xml")
+        let xml = try self.environment.renderTemplate(name: "Views/Blog/Template/SitemapUrls.xml", context: context)
+        try self.write(xml, to: "Generated-working/blog/SitemapUrls.xml")
 
         print("done")
     }
@@ -239,8 +200,8 @@ private extension StaticPagesGenerator {
             ]
         })
 
-        let xml = try self.environment.renderTemplate(name: "Views/feed.xml", context: context)
-        try self.write(xml, to: "Generated-working/feed.xml")
+        let xml = try self.environment.renderTemplate(name: "Views/Blog/Template/feed.xml", context: context)
+        try self.write(xml, to: "Generated-working/blog/feed.xml")
 
         print("done")
     }
