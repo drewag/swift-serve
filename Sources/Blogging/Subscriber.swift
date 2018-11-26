@@ -10,7 +10,7 @@ import Foundation
 import SQL
 import Swiftlier
 
-public struct Subscriber: TableStorable, ErrorGenerating, Codable {
+public struct Subscriber: TableStorable, ErrorGenerating {
     public static let tableName = "subscribers"
 
     public typealias CodingKeys = Fields
@@ -60,6 +60,31 @@ public struct Subscriber: TableStorable, ErrorGenerating, Codable {
 
     var justThisInstance: Predicate {
         return type(of: self).field(.email) == self.email
+    }
+}
+
+extension Subscriber: Codable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        let rawSubscribed = try container.decode(String.self, forKey: .subscribed)
+        guard let subscribed = rawSubscribed.railsDate else {
+            throw DecodingError.dataCorruptedError(forKey: .subscribed, in: container, debugDescription: "invalid date")
+        }
+
+        self.init(
+            email: try container.decode(String.self, forKey: .email),
+            unsubscribeToken: try container.decode(String.self, forKey: .unsubscribeToken),
+            subscribed: subscribed
+        )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(self.email, forKey: .email)
+        try container.encode(self.unsubscribeToken, forKey: .unsubscribeToken)
+        try container.encode(self.subscribed.railsDate, forKey: .subscribed)
     }
 }
 
