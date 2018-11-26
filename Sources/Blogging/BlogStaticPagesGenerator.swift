@@ -151,6 +151,12 @@ private extension BlogStaticPagesGenerator {
         let posts = try self.postsService.loadAllPublishedPosts()
         let organized = try self.postsService.loadPostsOrganizedByTag()
 
+        guard !posts.isEmpty || !organized.isEmpty else {
+            try self.write("", to: "Generated-working/blog/SitemapUrls.xml")
+            print("done")
+            return
+        }
+
         var context = self.defaultContext
         context["domain"] = domain
         context["posts"] = posts.map {
