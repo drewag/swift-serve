@@ -337,15 +337,16 @@ private extension SwiftServeInstance {
             try server.start()
         }
 
+        var generators = [StaticPagesGenerator]()
+
+
         if self.htmlEnabled {
-            var generators: [StaticPagesGenerator] = [
-                WebStaticPagesGenerator()
-            ]
-            if let config = self.blogConfiguration {
-                generators.append(BlogStaticPagesGenerator(configuration: config))
-            }
-            self.commandLineParser.command(named: "regenerate", handler: RegenerateCommand.handler(generators: generators))
+            generators.append(WebStaticPagesGenerator())
         }
+        if let config = self.blogConfiguration {
+            generators.append(BlogStaticPagesGenerator(configuration: config))
+        }
+        self.commandLineParser.command(named: "regenerate", handler: RegenerateCommand.handler(generators: generators))
 
         self.blogRouter?.addCommands(to: self.commandLineParser)
         self.customizeCommandLineParser?(self.commandLineParser)
