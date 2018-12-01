@@ -383,7 +383,7 @@ extension SwiftServeInstanceSpec: Codable {
         self.domain = try container.decode(String.self, forKey: .domain)
         self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
         self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
-        self.dataDirectories = try container.decode([String].self, forKey: .dataDirectories)
+        self.dataDirectories = try container.decodeIfPresent([String].self, forKey: .dataDirectories) ?? []
     }
 
     public func encode(to encoder: Encoder) throws {
