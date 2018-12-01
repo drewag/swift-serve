@@ -36,6 +36,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
     fileprivate let htmlEnabled: Bool
+    fileprivate let dataDirectories: [String]
     fileprivate let blogConfiguration: BlogConfiguration?
     fileprivate let blogRouter: BlogRouter?
     fileprivate let extraSchemes: [Scheme]
@@ -70,8 +71,22 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         }
     }
 
+    /// Define a service instance
+    ///
+    /// - Parameters:
+    ///   - domain: The domain the service is hosted on
+    ///   - dataDirectories: Directories that contain permenant data files
+    ///   - htmlEnabled: Support basic HTML service features
+    ///   - assetsEnabled: Support raw assets being accessible at /assets from the Assets directory
+    ///   - blogConfiguration: Configuration for a blog route
+    ///   - allowCrossOriginRequests
+    ///   - databaseChanges: List of changes that define the database
+    ///   - routes: Root routes
+    ///   - customizeCommandLineParser: Opportunity to add custom command line commands
+    ///   - extraSchemes: Extra schemes to add to Xcode projects
     public init(
         domain: String,
+        dataDirectories: [String] = [],
         htmlEnabled: Bool = false,
         assetsEnabled: Bool = true,
         blogConfiguration: BlogConfiguration? = nil,
@@ -89,6 +104,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.allowCrossOriginRequests = allowCrossOriginRequests
         self.htmlEnabled = htmlEnabled
         self.blogConfiguration = blogConfiguration
+        self.dataDirectories = dataDirectories
 
         var routes = routes
         if let config = blogConfiguration {
@@ -166,6 +182,7 @@ public struct SwiftServeInstanceSpec {
     public let domain: String
     public let extraInfoSpec: String
     public let extraSchemes: [Scheme]
+    public let dataDirectories: [String]
 }
 
 private extension SwiftServeInstance {
@@ -255,7 +272,7 @@ private extension SwiftServeInstance {
             try parser.parse()
 
             let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
-            let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes)
+            let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes, dataDirectories: self.dataDirectories)
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(spec)
@@ -355,7 +372,7 @@ private extension SwiftServeInstance {
 
 extension SwiftServeInstanceSpec: Codable {
     enum CodingKeys: String, CodingKey {
-        case version, domain, extraInfoSpec, extraSchemes
+        case version, domain, extraInfoSpec, extraSchemes, dataDirectories
     }
 
     public init(from decoder: Decoder) throws {
@@ -366,6 +383,7 @@ extension SwiftServeInstanceSpec: Codable {
         self.domain = try container.decode(String.self, forKey: .domain)
         self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
         self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
+        self.dataDirectories = try container.decode([String].self, forKey: .dataDirectories)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -374,6 +392,7 @@ extension SwiftServeInstanceSpec: Codable {
         try container.encode(self.domain, forKey: .domain)
         try container.encode(self.extraInfoSpec, forKey: .extraInfoSpec)
         try container.encode(self.extraSchemes, forKey: .extraSchemes)
+        try container.encode(self.dataDirectories, forKey: .dataDirectories)
     }
 }
 
