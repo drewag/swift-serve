@@ -22,13 +22,28 @@ public struct Scheme {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
-    public enum Environment {
-        case production
-        case development
-        case test
+public enum SwiftServiceEnvironment {
+    case production
+    case development
+    case test
+
+    public func databaseName(fromDomain domain: String) -> String {
+        switch self {
+        case .development:
+            return domain.replacingOccurrences(of: ".", with: "_") + "_dev"
+        case .test:
+            return domain.replacingOccurrences(of: ".", with: "_") + "_test"
+        case .production:
+            return domain.replacingOccurrences(of: ".", with: "_")
+        }
     }
 
+    public func databaseRole(fromDomain domain: String) -> String {
+        return domain.replacingOccurrences(of: ".", with: "_") + "_service"
+    }
+}
+
+public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public let databaseChanges: [DatabaseChange]
     public let routes: [Route]
     public let allowCrossOriginRequests: Bool
@@ -55,7 +70,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
         return loadedExtraInfo
     }
-    public var environment: Environment {
+    public var environment: SwiftServiceEnvironment {
         guard !self.isTesting else {
             return .test
         }
@@ -187,22 +202,25 @@ public struct SwiftServeInstanceSpec {
 
 private extension SwiftServeInstance {
     var databaseName: String {
-        switch self.environment {
-        case .development:
-            return self.domain.replacingOccurrences(of: ".", with: "_") + "_dev"
-        case .test:
-            return self.domain.replacingOccurrences(of: ".", with: "_") + "_test"
-        case .production:
-            return self.domain.replacingOccurrences(of: ".", with: "_")
-        }
+        return self.environment.databaseName(fromDomain: self.domain)
+    }
+
+    func spec() throws -> SwiftServeInstanceSpec {
+        let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
+        return SwiftServeInstanceSpec(
+            version: (5,0),
+            domain: self.domain,
+            extraInfoSpec: dict,
+            extraSchemes: self.extraSchemes,
+            dataDirectories: self.dataDirectories
+        )
     }
 
     var databaseRole: String {
-        return self.domain.replacingOccurrences(of: ".", with: "_")
-            + "_service"
+        return self.environment.databaseRole(fromDomain: self.domain)
     }
 
-    static func loadDatabasePassword(for environment: Environment) -> String {
+    static func loadDatabasePassword(for environment: SwiftServiceEnvironment) -> String {
         let filePath = "database_password.string"
         if let string = try? String(contentsOfFile: filePath)
             , !string.isEmpty
@@ -228,7 +246,7 @@ private extension SwiftServeInstance {
         return password
     }
 
-    static func loadExtraInfo(for environment: Environment) -> ExtraInfo {
+    static func loadExtraInfo(for environment: SwiftServiceEnvironment) -> ExtraInfo {
         var filePath = "extra_info.json"
         switch environment {
         case .development:
@@ -271,8 +289,7 @@ private extension SwiftServeInstance {
         self.commandLineParser.command(named: "info") { parser in
             try parser.parse()
 
-            let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
-            let spec = SwiftServeInstanceSpec(version: (5,0), domain: self.domain, extraInfoSpec: dict, extraSchemes: self.extraSchemes, dataDirectories: self.dataDirectories)
+            let spec = try self.spec()
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(spec)
