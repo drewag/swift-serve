@@ -35,7 +35,7 @@ class Post: ErrorGenerating {
         let summary: String
         let metaDescription: String?
         let isFeatured: Bool
-        let imageHeight: Int
+        let imageHeight: Int?
         let tags: [Tag]
 
         var publishedDescription: String
@@ -53,7 +53,7 @@ class Post: ErrorGenerating {
             summary: String,
             metaDescription: String?,
             isFeatured: Bool,
-            imageHeight: Int,
+            imageHeight: Int?,
             tags: [Tag],
             published: Date?,
             notified: Date?,
@@ -89,6 +89,12 @@ class Post: ErrorGenerating {
     private(set) var metaInfo: MetaInfo
     private(set) var extraAssets: [FilePath]
     fileprivate var html: String?
+    var hasImage: Bool {
+        guard let path = try? self.imagePath() else {
+            return false
+        }
+        return nil != path.file
+    }
 
     func loadHtml() throws -> String {
         if let html = self.html {
@@ -181,7 +187,7 @@ extension Post.MetaInfo: Codable {
             summary: try container.decode(String.self, forKey: .summary),
             metaDescription: try container.decodeIfPresent(String.self, forKey: .metaDescription),
             isFeatured: try container.decode(Bool.self, forKey: .isFeatured),
-            imageHeight: try container.decode(Int.self, forKey: .imageHeight),
+            imageHeight: try container.decodeIfPresent(Int.self, forKey: .imageHeight),
             tags: try container.decode([Tag].self, forKey: .tags),
             published: try container.decodeIfPresent(String.self, forKey: .published)?.iso8601DateTime,
             notified: try container.decodeIfPresent(String.self, forKey: .notified)?.iso8601DateTime,

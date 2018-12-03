@@ -36,7 +36,7 @@ extension Post {
         context["tags"] = self.metaInfo.tags.map { tag in
             return [
                 "name": tag.display,
-                "link": "blog/posts/tags/\(tag.link)",
+                "link": "posts/tags/\(tag.link)",
             ]
         }
     }

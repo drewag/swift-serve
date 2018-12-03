@@ -12,9 +12,10 @@ import Swiftlier
 public protocol Server: ErrorGenerating {
     var extraLogForRequest: ((Request) -> String?)? {get set}
     var postProcessResponse: ((inout Response) -> ())? {get set}
+    var errorViewRoot: String {get}
 
-    init(port: Int, router: Router) throws
-    init(port: Int, router: Router, certificatePath: String, privateKeyPath: String) throws
+    init(port: Int, router: Router, errorViewRoot: String) throws
+    init(port: Int, router: Router, errorViewRoot: String, certificatePath: String, privateKeyPath: String) throws
 
     func start() throws
 }
@@ -31,7 +32,7 @@ extension Server {
 
     public func unhandledResponse(to request: Request) -> Response {
         return request.response(body: "Path was: \(request.endpoint.absoluteString)", status: .notFound)
-    }
+    } 
 
     public func response(for error: Error, from request: Request) -> Response {
         let reportableError = self.error("handling request", from: error)
@@ -51,7 +52,7 @@ extension Server {
 
         if request.accepts(.html(.utf8)),
             let htmlResponse = (try? request.response(
-                template: "Views/Errors/Unhandled.html",
+                template: "\(self.errorViewRoot)Unhandled.html",
                 status: status,
                 build: { context in
                     context["message"] = reportableError.description

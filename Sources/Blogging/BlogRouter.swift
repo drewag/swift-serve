@@ -18,7 +18,6 @@ protocol AnyBlogRouter {
 extension AnyBlogRouter {
     func sharedBuild(context: inout [String:Any]) {
         context["rootBlogEndpoint"] = self.configuration.rootEndpoint
-        context["page"] = "blog"
     }
 }
 
@@ -77,7 +76,6 @@ class BlogRouter: ConcreteBlogRouter {
                         template: "Views/Blog/Navigation.html",
                         build: { context in
                             context["title"] = "All Posts"
-                            context["page"] = "blog"
                             context["content"] = content
                         }
                     ))
@@ -91,7 +89,6 @@ class BlogRouter: ConcreteBlogRouter {
                             template: "Views/Blog/Navigation.html",
                             build: { context in
                                 context["title"] = "\(rawTag) Posts"
-                                context["page"] = "blog"
                                 context["content"] = content
                             }
                         ))

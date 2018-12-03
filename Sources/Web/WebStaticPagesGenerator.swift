@@ -12,10 +12,17 @@ import Stencil
 class WebStaticPagesGenerator: StaticPagesGenerator {
     fileprivate let environment = Environment(loader: FileSystemLoader(paths: ["."]))
 
+    let configuration: WebConfiguration
     var postsService = PostsService()
 
     var defaultContext: [String:Any] {
-        return [:]
+        return [
+            "config":configuration
+        ]
+    }
+
+    init(configuration: WebConfiguration) {
+        self.configuration = configuration
     }
 
     override func generate(forDomain domain: String) throws {
@@ -30,9 +37,9 @@ private extension WebStaticPagesGenerator {
     func generateSiteDownPage() throws {
         print("Generating site down page...", terminator: "")
         var context = self.defaultContext
-        context["css"] = (try? String(contentsOfFile: "Assets/css/main.css")) ?? nil
-        let html = try self.environment.renderTemplate(name: "Views/Web/Template/SiteDown.html", context: context)
-        try self.write(html, to: "Generated-working/site-down.html")
+        context["css"] = (try? String(contentsOfFile: "\(self.configuration.cssRoot)main.css")) ?? nil
+        let html = try self.environment.renderTemplate(name: "\(self.configuration.viewRoot)Web/Template/SiteDown.html", context: context)
+        try self.write(html, to: "\(self.configuration.generatedWorkingRoot)site-down.html")
         print("done")
     }
 
@@ -65,8 +72,8 @@ private extension WebStaticPagesGenerator {
             from: try FileSystem.default.workingDirectory.subdirectory("Views").subdirectory("Pages"),
             path: ""
         )
-        let html = try self.environment.renderTemplate(name: "Views/Web/Template/SitemapUrls.xml", context: context)
-        try self.write(html, to: "Generated-working/web/SitemapUrls.xml")
+        let html = try self.environment.renderTemplate(name: "\(self.configuration.viewRoot)Web/Template/SitemapUrls.xml", context: context)
+        try self.write(html, to: "\(self.configuration.generatedWorkingRoot)web/SitemapUrls.xml")
         print("done")
     }
 }

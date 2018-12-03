@@ -50,8 +50,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
-    fileprivate let htmlEnabled: Bool
     fileprivate let dataDirectories: [String]
+    fileprivate let webConfiguration: WebConfiguration?
     fileprivate let blogConfiguration: BlogConfiguration?
     fileprivate let blogRouter: BlogRouter?
     fileprivate let extraSchemes: [Scheme]
@@ -86,6 +86,34 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         }
     }
 
+    @available (*, deprecated)
+    public convenience init(
+        domain: String,
+        dataDirectories: [String] = [],
+        htmlEnabled: Bool,
+        assetsEnabled: Bool = true,
+        blogConfiguration: BlogConfiguration? = nil,
+        allowCrossOriginRequests: Bool = false,
+        databaseChanges: [DatabaseChange],
+        routes: [Route],
+        customizeCommandLineParser: ((Parser) -> ())? = nil,
+        extraSchemes: [Scheme] = []
+        )
+    {
+        self.init(
+            domain: domain,
+            dataDirectories: dataDirectories,
+            assetsEnabled: assetsEnabled,
+            webConfiguration: htmlEnabled ? WebConfiguration(viewSubdirectory: "") : nil,
+            blogConfiguration: blogConfiguration,
+            allowCrossOriginRequests: allowCrossOriginRequests,
+            databaseChanges: databaseChanges,
+            routes: routes,
+            customizeCommandLineParser: customizeCommandLineParser,
+            extraSchemes: extraSchemes
+        )
+    }
+
     /// Define a service instance
     ///
     /// - Parameters:
@@ -102,8 +130,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public init(
         domain: String,
         dataDirectories: [String] = [],
-        htmlEnabled: Bool = false,
         assetsEnabled: Bool = true,
+        webConfiguration: WebConfiguration? = nil,
         blogConfiguration: BlogConfiguration? = nil,
         allowCrossOriginRequests: Bool = false,
         databaseChanges: [DatabaseChange],
@@ -117,7 +145,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.productionPromise = parser.option(named: "prod")
         self.testPromise = parser.option(named: "test")
         self.allowCrossOriginRequests = allowCrossOriginRequests
-        self.htmlEnabled = htmlEnabled
+        self.webConfiguration = webConfiguration
         self.blogConfiguration = blogConfiguration
         self.dataDirectories = dataDirectories
 
@@ -127,6 +155,9 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
             var rootEndpoint = config.rootEndpoint
             if rootEndpoint.hasPrefix("/") {
                 rootEndpoint.remove(at: rootEndpoint.startIndex)
+            }
+            if rootEndpoint.hasSuffix("/") {
+                rootEndpoint.removeLast()
             }
             if rootEndpoint.isEmpty {
                 routes.insert(Route.any(router: blogRouter), at: 0)
@@ -142,12 +173,12 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         if assetsEnabled {
             routes.insert(.get("assets", router: AssetRouter()), at: 0)
         }
-        if htmlEnabled {
-            routes.insert(.get(router: WebBasicsRouter()), at: 0)
-            routes.insert(.get(router: FaviconRouter()), at: 0)
-            routes.append(.get(router: PagesRouter()))
+        if let config = webConfiguration {
+            routes.insert(.get(router: WebBasicsRouter(configuration: config)), at: 0)
+            routes.insert(.get(router: FaviconRouter(configuration: config)), at: 0)
+            routes.append(.get(router: PagesRouter(configuration: config)))
             // 404
-            routes.append(.any(router: WebErrorRouter()))
+            routes.append(.any(router: WebErrorRouter(configuration: config)))
         }
 
         self.customizeCommandLineParser = customizeCommandLineParser
@@ -360,7 +391,12 @@ private extension SwiftServeInstance {
             #endif
 
             print("Staring Server on \(port.parsedValue) using database \(DatabaseSetup!.name)...")
-            var server = try S(port: port.parsedValue, router: self)
+            var errorViewRoot = "Views/"
+            if let config = self.webConfiguration, !config.viewRoot.isEmpty {
+                errorViewRoot += config.viewRoot + "/"
+            }
+            errorViewRoot += "Errors/"
+            var server = try S(port: port.parsedValue, router: self, errorViewRoot: errorViewRoot)
             if self.allowCrossOriginRequests {
                 server.postProcessResponse = { response in
                     response.headers["Access-Control-Allow-Origin"] = "*"
@@ -374,8 +410,8 @@ private extension SwiftServeInstance {
         var generators = [StaticPagesGenerator]()
 
 
-        if self.htmlEnabled {
-            generators.append(WebStaticPagesGenerator())
+        if let config = self.webConfiguration {
+            generators.append(WebStaticPagesGenerator(configuration: config))
         }
         if let config = self.blogConfiguration {
             generators.append(BlogStaticPagesGenerator(configuration: config))

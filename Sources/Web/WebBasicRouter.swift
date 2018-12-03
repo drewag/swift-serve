@@ -7,21 +7,23 @@
 
 import Swiftlier
 
-struct WebBasicsRouter: Router {
-    let routes: [Route] = [
-        .get("robots.txt", handler: { request in
-            let template = "Views/Robots.txt"
-            guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
-                return .unhandled
-            }
-            return .handled(try request.response(template: template, contentType: "text/plain"))
-        }),
-        .get("sitemap.xml", handler: { request in
-            let template = "Views/Sitemap.xml"
-            guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
-                return .unhandled
-            }
-            return .handled(try request.response(template: template, contentType: "text/xml"))
-        }),
-    ]
+class WebBasicsRouter: WebRouter {
+    override var routes: [Route] {
+        return [
+            .get("robots.txt", handler: { request in
+                let template = "\(self.configuration.viewRoot)Robots.txt"
+                guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
+                    return .unhandled
+                }
+                return .handled(try request.response(template: template, contentType: "text/plain"))
+            }),
+            .get("sitemap.xml", handler: { request in
+                let template = "\(self.configuration.viewRoot)Sitemap.xml"
+                guard nil != FileSystem.default.workingDirectory.subPath(byAppending: template).file else {
+                    return .unhandled
+                }
+                return .handled(try request.response(template: template, contentType: "text/xml"))
+            }),
+        ]
+    }
 }

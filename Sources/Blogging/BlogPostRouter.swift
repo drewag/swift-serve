@@ -32,13 +32,14 @@ class BlogPostRouter: ParameterizedBlogRouter<(((Int, Int), Int), String)> {
                 template: "Views/Blog/Post.html",
                 build: { context in
                     context["title"] = post.metaInfo.title
-                    context["page"] = "blog"
                     context["description"] = post.metaInfo.metaDescription
                     context["author"] = post.metaInfo.author
                     context["content"] = content
                     context["tags"] = post.metaInfo.tags
                     context["published"] = publishedDate.date
-                    context["imageUrl"] = request.endpoint.appendingPathComponent("photo.jpg").relativePath
+                    if post.hasImage {
+                        context["imageUrl"] = request.endpoint.appendingPathComponent("photo.jpg").relativePath
+                    }
                     context["permaLink"] = request.endpoint.relativePath
                 }
             ))
