@@ -27,30 +27,18 @@ public enum SwiftServiceEnvironment {
     case development
     case test
 
-    public func databaseName(fromDomain domain: String) -> String {
-        switch self {
-        case .development:
-            return domain.replacingOccurrences(of: ".", with: "_") + "_dev"
-        case .test:
-            return domain.replacingOccurrences(of: ".", with: "_") + "_test"
-        case .production:
-            return domain.replacingOccurrences(of: ".", with: "_")
+    public func databaseName(from spec: SwiftServeInstanceSpec) -> String {
+        guard let custom = spec.databaseRootName else {
+            return self.databaseName(fromDomain: spec.domain)
         }
+        return self.databaseName(fromRoot: custom)
     }
 
-    public func databaseName(fromRoot root: String) -> String {
-        switch self {
-        case .development:
-            return root + "_dev"
-        case .test:
-            return root + "_test"
-        case .production:
-            return root
+    public func databaseRole(from spec: SwiftServeInstanceSpec) -> String {
+        guard let custom = spec.databaseRootName else {
+            return self.databaseRole(fromDomain: spec.domain)
         }
-    }
-
-    public func databaseRole(fromDomain domain: String) -> String {
-        return domain.replacingOccurrences(of: ".", with: "_") + "_service"
+        return self.databaseRole(fromRoot: custom)
     }
 }
 
@@ -514,5 +502,30 @@ private struct SwiftServe: TableStorable {
             return 0
         }
         return try row.get(.version)
+    }
+}
+
+private extension SwiftServiceEnvironment {
+    func databaseName(fromDomain domain: String) -> String {
+        return self.databaseName(fromRoot: domain.replacingOccurrences(of: ".", with: "_"))
+    }
+
+    func databaseName(fromRoot root: String) -> String {
+        switch self {
+        case .development:
+            return root + "_dev"
+        case .test:
+            return root + "_test"
+        case .production:
+            return root
+        }
+    }
+
+    func databaseRole(fromDomain domain: String) -> String {
+        return self.databaseRole(fromRoot: domain.replacingOccurrences(of: ".", with: "_"))
+    }
+
+    func databaseRole(fromRoot root: String) -> String {
+        return root + "_service"
     }
 }
