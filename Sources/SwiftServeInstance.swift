@@ -235,13 +235,6 @@ public struct SwiftServeInstanceSpec {
 }
 
 private extension SwiftServeInstance {
-    var databaseName: String {
-        guard let name = self.customDatabaseName else {
-            return self.environment.databaseName(fromDomain: self.domain)
-        }
-        return self.environment.databaseName(fromRoot: name)
-    }
-
     func spec() throws -> SwiftServeInstanceSpec {
         let dict = try SpecDecoder.spec(forType: ExtraInfo.self)
         return SwiftServeInstanceSpec(
@@ -254,8 +247,18 @@ private extension SwiftServeInstance {
         )
     }
 
+    var databaseName: String {
+        guard let name = self.customDatabaseName else {
+            return self.environment.databaseName(fromDomain: self.domain)
+        }
+        return self.environment.databaseName(fromRoot: name)
+    }
+
     var databaseRole: String {
-        return self.environment.databaseRole(fromDomain: self.domain)
+        guard let name = self.customDatabaseName else {
+            return self.environment.databaseRole(fromDomain: self.domain)
+        }
+        return self.environment.databaseRole(fromRoot: name)
     }
 
     static func loadDatabasePassword(for environment: SwiftServiceEnvironment) -> String {
