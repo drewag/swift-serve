@@ -38,6 +38,17 @@ public enum SwiftServiceEnvironment {
         }
     }
 
+    public func databaseName(fromRoot root: String) -> String {
+        switch self {
+        case .development:
+            return root + "_dev"
+        case .test:
+            return root + "_test"
+        case .production:
+            return root
+        }
+    }
+
     public func databaseRole(fromDomain domain: String) -> String {
         return domain.replacingOccurrences(of: ".", with: "_") + "_service"
     }
@@ -60,6 +71,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate var isTesting: Bool = false
 
     public let domain: String
+    public let customDatabaseName: String?
     private var loadedExtraInfo: ExtraInfo?
     public var extraInfo: ExtraInfo {
         guard let loadedExtraInfo = self.loadedExtraInfo else {
@@ -129,6 +141,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     ///   - extraSchemes: Extra schemes to add to Xcode projects
     public init(
         domain: String,
+        databaseName: String? = nil,
         dataDirectories: [String] = [],
         assetsEnabled: Bool = true,
         webConfiguration: WebConfiguration? = nil,
@@ -141,6 +154,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         )
     {
         let parser = Parser(arguments: CommandLine.arguments)
+        self.customDatabaseName = databaseName
         self.commandLineParser = parser
         self.productionPromise = parser.option(named: "prod")
         self.testPromise = parser.option(named: "test")
@@ -229,11 +243,15 @@ public struct SwiftServeInstanceSpec {
     public let extraInfoSpec: String
     public let extraSchemes: [Scheme]
     public let dataDirectories: [String]
+    public let databaseRootName: String?
 }
 
 private extension SwiftServeInstance {
     var databaseName: String {
-        return self.environment.databaseName(fromDomain: self.domain)
+        guard let name = self.customDatabaseName else {
+            return self.environment.databaseName(fromDomain: self.domain)
+        }
+        return self.environment.databaseName(fromRoot: name)
     }
 
     func spec() throws -> SwiftServeInstanceSpec {
@@ -243,7 +261,8 @@ private extension SwiftServeInstance {
             domain: self.domain,
             extraInfoSpec: dict,
             extraSchemes: self.extraSchemes,
-            dataDirectories: self.dataDirectories
+            dataDirectories: self.dataDirectories,
+            databaseRootName: self.customDatabaseName ?? self.domain.replacingOccurrences(of: ".", with: "_")
         )
     }
 
@@ -425,7 +444,7 @@ private extension SwiftServeInstance {
 
 extension SwiftServeInstanceSpec: Codable {
     enum CodingKeys: String, CodingKey {
-        case version, domain, extraInfoSpec, extraSchemes, dataDirectories
+        case version, domain, extraInfoSpec, extraSchemes, dataDirectories, databaseRootName
     }
 
     public init(from decoder: Decoder) throws {
@@ -437,6 +456,7 @@ extension SwiftServeInstanceSpec: Codable {
         self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
         self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
         self.dataDirectories = try container.decodeIfPresent([String].self, forKey: .dataDirectories) ?? []
+        self.databaseRootName = try container.decodeIfPresent(String.self, forKey: .databaseRootName)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -446,6 +466,7 @@ extension SwiftServeInstanceSpec: Codable {
         try container.encode(self.extraInfoSpec, forKey: .extraInfoSpec)
         try container.encode(self.extraSchemes, forKey: .extraSchemes)
         try container.encode(self.dataDirectories, forKey: .dataDirectories)
+        try container.encode(self.databaseRootName, forKey: .databaseRootName)
     }
 }
 
