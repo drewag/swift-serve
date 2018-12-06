@@ -162,7 +162,7 @@ private extension BlogStaticPagesGenerator {
         context["posts"] = posts.map {
             return [
                 "link": $0.permanentRelativePath,
-                "modified": $0.metaInfo.modified?.railsDate,
+                "modified": ($0.metaInfo.modified ?? $0.metaInfo.published)?.railsDate,
             ]
         }
         context["tags"] = organized.map({ tag, _ in
