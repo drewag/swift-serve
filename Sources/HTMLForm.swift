@@ -9,9 +9,8 @@
 import Swiftlier
 import Stencil
 
-public protocol HTMLFormField: RawRepresentable, Hashable {
+public protocol HTMLFormField: RawRepresentable, Hashable, CaseIterable {
     static var action: String {get}
-    static var all: [Self] {get}
 }
 
 public class HTMLForm<Field: HTMLFormField>: ErrorGenerating where Field.RawValue == String {
@@ -61,13 +60,13 @@ public class HTMLForm<Field: HTMLFormField>: ErrorGenerating where Field.RawValu
 
 extension Request {
     public func parseForm<Field>(defaultValues: [Field:String?] = [:], process: (HTMLForm<Field>) throws -> (ResponseStatus?)) -> HTMLForm<Field> {
-        guard Field.all.count > 0 else {
+        guard Field.allCases.count > 0 else {
             return HTMLForm(fields: [:])
         }
 
         var parsedFields = [Field:String]()
         let formValues = self.formValues()
-        for field in Field.all {
+        for field in Field.allCases {
             parsedFields[field] = formValues[field.rawValue]
                 ?? defaultValues[field]
                 ?? ""
