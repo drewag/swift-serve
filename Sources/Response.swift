@@ -8,6 +8,10 @@ public protocol Response: CustomStringConvertible {
     var headers: [String:String] {get set}
 }
 
+public enum Redirect {
+    case permanently,temporarily,completedPost
+}
+
 extension Request {
     public func response(withData data: Data, status: HTTPStatus, error: ReportableError? = nil) -> Response {
         return self.response(withData: data, status: status, error: error, headers: [:])
@@ -56,8 +60,23 @@ extension Request {
         )
     }
 
+    @available (*, deprecated)
     public func response(redirectingTo to: String, permanently: Bool) -> Response {
-        return self.response(status: permanently ? .movedPermanently : .temporaryRedirect, headers: ["Location": "\(to)"])
+        return self.response(redirectingTo: to, permanently ? .permanently : .temporarily)
+    }
+
+    public func response(redirectingTo to: String, _ redirect: Redirect) -> Response {
+        let status: HTTPStatus
+        switch redirect {
+        case .temporarily:
+
+            status = .temporaryRedirect
+        case .permanently:
+            status = .movedPermanently
+        case .completedPost:
+            status = .seeOther
+        }
+        return self.response(status: status, headers: ["Location": "\(to)"])
     }
 
     public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) throws -> Response {

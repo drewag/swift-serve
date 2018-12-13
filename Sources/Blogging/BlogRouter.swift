@@ -99,7 +99,7 @@ class BlogRouter: ConcreteBlogRouter {
                     do {
                         let redirectEndpoint = try String(contentsOfFile: "OldPermalinks/\(title)")
                         if !redirectEndpoint.isEmpty {
-                            return .handled(request.response(redirectingTo: "\(redirectEndpoint)", permanently: true))
+                            return .handled(request.response(redirectingTo: "\(redirectEndpoint)", .permanently))
                         }
                     }
                     catch {}
