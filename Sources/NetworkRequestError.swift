@@ -6,6 +6,7 @@
 //
 //
 
+import Foundation
 import Swiftlier
 
 extension Request {
@@ -19,6 +20,6 @@ extension Request {
         default:
             perpitrator = .system
         }
-        return NetworkError(from: type(of: self), by: perpitrator, doing: doing, because: ErrorReason(because), status: status)
+        return NetworkError(from: type(of: self), by: perpitrator, doing: doing, because: ErrorReason(because), status: status, backtrace: Thread.callStackSymbols)
     }
 }
