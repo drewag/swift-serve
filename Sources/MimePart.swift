@@ -32,6 +32,7 @@ public struct MimePart: ErrorGenerating {
         case octetStream(Data)
         case html(String)
         case plain(String)
+        case json(String)
         case zip(Data)
         case gzip(Data)
         case csv(Data)
@@ -105,6 +106,8 @@ public struct MimePart: ErrorGenerating {
             self.content = .plain(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .csv:
             self.content = .csv(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
+        case .json(let encoding):
+            self.content = .json(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .mp4:
             self.content = .mp4(type(of: self).data(from: body, transferEncoding: contentTransferEncoding, characterEncoding: .isoLatin1))
         case .jpg:
@@ -249,7 +252,7 @@ public struct MimePart: ErrorGenerating {
 
         let childParts: [MimePart]
         switch self.content {
-        case .csv, .deliveryStatus, .gzip, .html, .jpg, .none, .pdf, .png, .octetStream, .plain, .zip, .mp4:
+        case .csv, .deliveryStatus, .gzip, .html, .jpg, .none, .pdf, .png, .octetStream, .plain, .zip, .mp4, .json:
             return nil
         case .email(let raw):
             guard let part = try? MimePart(rawContents: raw) else {
@@ -425,6 +428,8 @@ extension MimePart.Content {
         switch self {
         case .csv:
             return .csv
+        case .json:
+            return .json(.utf8)
         case .deliveryStatus:
             return .deliveryStatus
         case .html:
@@ -482,6 +487,11 @@ extension MimePart.Content {
             extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
             extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
             body = html.quotedPrintableEncoded
+        case .json(let json):
+            extraHeaders["Content-Type"] = ContentType.json(.utf8).raw
+            extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
+            extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.quotedPrintable.raw
+            body = json.quotedPrintableEncoded
         case .email(let raw):
             extraHeaders["Content-Type"] = ContentType.email.raw
             extraHeaders["Content-Disposition"] = ContentDisposition.attachment(fileName: name).raw

@@ -14,6 +14,7 @@ public enum ContentType {
     case jpg
     case octetStream
     case csv
+    case json(String.Encoding)
     case mp4
     case html(String.Encoding)
     case plainText(String.Encoding)
@@ -102,6 +103,13 @@ public enum ContentType {
             self = .gzip(name: StructuredHeader.parse(remaining)["name"])
         case "application/pdf":
             self = .pdf
+        case "application/json":
+            let remaining = parts.joined(separator: ";")
+            var encoding: String.Encoding = .utf8
+            if let encodingString = StructuredHeader.parse(remaining)["charset"] {
+                encoding = String.Encoding(string: encodingString)
+            }
+            self = .json(encoding)
         case "video/mp4":
             self = .mp4
         case "application/octet-stream":
@@ -165,6 +173,8 @@ public enum ContentType {
             return "video/mp4"
         case .plainText(let encoding):
             return "text/plain; charset=\(encoding.raw)"
+        case .json(let encoding):
+            return "application/json;  charset=\(encoding.raw)"
         case .png:
             return "image/png"
         case .email:
@@ -215,6 +225,13 @@ extension ContentType: Equatable {
         case .pdf:
             switch rhs {
             case .pdf:
+                return true
+            default:
+                return false
+            }
+        case .json:
+            switch rhs {
+            case .json:
                 return true
             default:
                 return false
