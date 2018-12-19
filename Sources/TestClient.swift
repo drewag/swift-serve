@@ -59,7 +59,7 @@ public class TestClient: Client {
         guard let block = type(of: self).onRequest else {
             if let request = request as? TestClientRequest {
                 if let (router, connection) = type(of: self).routerToHandleRequest?(request) {
-                    let request = TestRequest(connection: connection, method: request.method, endpoint: request.url, data: request.body, headers: request.headers, cookies: [:])
+                    let request = TestRequest(connection: connection, method: request.method, endpoint: request.url, data: request.body, headers: request.headers)
                     do {
                         let responseStatus = try router.route(request: request, to: request.endpoint.relativePath)
                         switch responseStatus {
@@ -69,8 +69,16 @@ public class TestClient: Client {
                             return TestClientResponse(body: Data(), status: .notFound)
                         }
                     }
+                    catch let error as NetworkError {
+                        let json = try? JSONEncoder().encode(error)
+                        return TestClientResponse(body: json ?? Data(), status: error.status)
+                    }
+                    catch let error as ReportableError {
+                        let json = try? JSONEncoder().encode(error)
+                        return TestClientResponse(body: json ?? Data(), status: .internalServerError)
+                    }
                     catch {
-
+                        return TestClientResponse(body: Data(), status: .internalServerError)
                     }
                 }
             }

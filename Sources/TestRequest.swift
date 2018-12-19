@@ -28,7 +28,7 @@ public class TestRequest: Request {
         endpoint: URL,
         data: Data,
         headers: [String:String],
-        cookies: [String:String]
+        cookies: [String:String] = [:]
         )
     {
         self.databaseConnection = connection
@@ -36,6 +36,20 @@ public class TestRequest: Request {
         self.endpoint = endpoint
         self.data = data
         self.headers = headers
+
+        var cookies = cookies
+        for (key, value) in headers {
+            guard key.lowercased() == "cookie" else {
+                continue
+            }
+
+            guard let range = value.range(of: "=") else {
+                continue
+            }
+            let cookieKey = value[value.startIndex ..< range.lowerBound]
+            let cookiesValue = value[range.upperBound ..< value.endIndex]
+            cookies[String(cookieKey)] = String(cookiesValue)
+        }
         self.cookies = cookies
     }
 
