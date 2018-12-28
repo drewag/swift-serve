@@ -65,7 +65,7 @@ extension Request {
         return self.response(redirectingTo: to, permanently ? .permanently : .temporarily)
     }
 
-    public func response(redirectingTo to: String, _ redirect: Redirect) -> Response {
+    public func response(redirectingTo to: String, _ redirect: Redirect, headers: [String:String] = [:]) -> Response {
         let status: HTTPStatus
         switch redirect {
         case .temporarily:
@@ -76,7 +76,9 @@ extension Request {
         case .completedPost:
             status = .seeOther
         }
-        return self.response(status: status, headers: ["Location": "\(to)"])
+        var headers = headers
+        headers["Location"] = to
+        return self.response(status: status, headers: headers)
     }
 
     public func response(jsonFromNativeTypes object: Any, status: HTTPStatus = .ok, error: ReportableError? = nil, headers: [String:String] = [:]) throws -> Response {
