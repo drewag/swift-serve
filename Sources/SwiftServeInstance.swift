@@ -43,7 +43,7 @@ public enum SwiftServiceEnvironment {
 }
 
 public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
-    public let databaseChanges: [DatabaseChange]
+    public let databaseChanges: [DatabaseChange]?
     public let routes: [Route]
     public let allowCrossOriginRequests: Bool
 
@@ -94,7 +94,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         assetsEnabled: Bool = true,
         blogConfiguration: BlogConfiguration? = nil,
         allowCrossOriginRequests: Bool = false,
-        databaseChanges: [DatabaseChange],
+        databaseChanges: [DatabaseChange]?,
         routes: [Route],
         customizeCommandLineParser: ((Parser) -> ())? = nil,
         extraSchemes: [Scheme] = []
@@ -135,7 +135,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         webConfiguration: WebConfiguration? = nil,
         blogConfiguration: BlogConfiguration? = nil,
         allowCrossOriginRequests: Bool = false,
-        databaseChanges: [DatabaseChange],
+        databaseChanges: [DatabaseChange]?,
         routes: [Route],
         customizeCommandLineParser: ((Parser) -> ())? = nil,
         extraSchemes: [Scheme] = []
@@ -366,6 +366,11 @@ private extension SwiftServeInstance {
             parser.command(named: "migrate") { parser in
                 try parser.parse()
 
+                guard let databaseChanges = self.databaseChanges else {
+                    print("Nothing to migrate")
+                    return
+                }
+
                 let connection = PostgreSQLConnection()
 
                 let core = try SwiftServeInternal(from: connection)
@@ -378,8 +383,8 @@ private extension SwiftServeInstance {
                     let _ = try? SwiftServe.updateVersion(to: newVersion, in: connection)
                 }
 
-                for index in currentVersion ..< self.databaseChanges.count {
-                    for query in self.databaseChanges[index].forwardQueries {
+                for index in currentVersion ..< databaseChanges.count {
+                    for query in databaseChanges[index].forwardQueries {
                         try connection.executeIgnoringResult(query)
                     }
                     newVersion += 1
