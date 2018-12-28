@@ -42,7 +42,7 @@ public enum SwiftServiceEnvironment {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
+public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router, ErrorGenerating {
     public let databaseChanges: [DatabaseChange]?
     public let routes: [Route]
     public let allowCrossOriginRequests: Bool
@@ -63,9 +63,14 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     private var loadedExtraInfo: ExtraInfo?
     public var extraInfo: ExtraInfo {
         guard let loadedExtraInfo = self.loadedExtraInfo else {
-            let loaded = SwiftServeInstance.loadExtraInfo(for: self.environment)
-            self.loadedExtraInfo = loaded
-            return loaded
+            do {
+                let loaded = try SwiftServeInstance.loadExtraInfo(for: self.environment)
+                self.loadedExtraInfo = loaded
+                return loaded
+            }
+            catch {
+                fatalError("\(error)")
+            }
         }
 
         return loadedExtraInfo
@@ -211,7 +216,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.isTesting = false
         do {
             try self.commandLineParser.parse(beforeExecute: {
-                self.loadDatabaseSetup()
+                try self.loadDatabaseSetup()
             })
         }
         catch {
@@ -221,7 +226,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 
     public func setupTest() {
         self.isTesting = true
-        self.loadDatabaseSetup()
+        try! self.loadDatabaseSetup()
     }
 }
 
@@ -261,14 +266,103 @@ private extension SwiftServeInstance {
         return self.environment.databaseRole(fromRoot: name)
     }
 
-    static func loadDatabasePassword(for environment: SwiftServiceEnvironment) -> String {
-        let filePath = "database_password.string"
-        if let string = try? String(contentsOfFile: filePath)
+    static func loadDatabasePassword(for environment: SwiftServiceEnvironment) throws -> String {
+        let newPath = self.pathForDatabasePassword(old: false)
+        let oldPath = self.pathForDatabasePassword(old: true)
+        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
             , !string.isEmpty
+            else
         {
-            return string
+            throw self.error("loading database password", because: "it is invalid. Please run config command.")
         }
 
+        return string
+    }
+
+    static func pathForExtraInfo(for environment: SwiftServiceEnvironment, old: Bool) -> String {
+        var fileName = "extra_info.json"
+        switch environment {
+        case .development:
+            fileName = "dev_\(fileName)"
+        case .test:
+            fileName = "test_\(fileName)"
+        case .production:
+            break
+        }
+        if old {
+            return fileName
+        }
+        else {
+            return "Config/\(fileName)"
+        }
+    }
+
+    static func pathForDatabasePassword(old: Bool) -> String {
+        var path = "database_password.string"
+        if !old {
+            path = "Config/\(path)"
+        }
+        return path
+    }
+
+    static func loadExtraInfo(for environment: SwiftServiceEnvironment) throws -> ExtraInfo {
+        let oldPath = self.pathForExtraInfo(for: environment, old: true)
+        let newPath = self.pathForExtraInfo(for: environment, old: false)
+        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
+            , let data = string.data(using: .utf8)
+            , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
+            else
+        {
+            throw self.error("loading config", because: "it is invalid. Please run config command.")
+        }
+        return extraInfo
+    }
+
+    static func loadPartialExtraInfo(for environment: SwiftServiceEnvironment) -> [String:String] {
+        let oldPath = self.pathForExtraInfo(for: environment, old: true)
+        let newPath = self.pathForExtraInfo(for: environment, old: false)
+        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
+            , let data = string.data(using: .utf8)
+            , let partial = try? JSONDecoder().decode([String:String].self, from: data)
+            else
+        {
+            return [:]
+        }
+        return partial
+    }
+
+    static func configExtraInfo(for environment: SwiftServiceEnvironment) {
+        if nil != (try? self.loadExtraInfo(for: environment)) {
+            print("Extra info is already configured, would you like to override it? (y/N) ", terminator: "")
+            let response = readLine(strippingNewline: true) ?? ""
+            guard response.lowercased() == "y" else {
+                return
+            }
+        }
+        
+        let filePath = self.pathForExtraInfo(for: environment, old: false)
+        let extraInfo: ExtraInfo = try! CommandLineDecoder.prompt(defaults: self.loadPartialExtraInfo(for: environment))
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(extraInfo)
+            let string = String(data: data, encoding: .utf8) ?? ""
+            try string.write(toFile: filePath, atomically: true, encoding: .utf8)
+        } catch {
+            print("Failed to save extra info: \(error)")
+        }
+    }
+
+    static func configDatabasePassword(for environment: SwiftServiceEnvironment) {
+        if nil != (try? self.loadDatabasePassword(for: environment)) {
+            print("A database password is already configured, would you like to override it? (y/N) ", terminator: "")
+            let response = readLine(strippingNewline: true) ?? ""
+            guard response.lowercased() == "y" else {
+                return
+            }
+        }
+
+        let filePath = self.pathForDatabasePassword(old: false)
         var password = ""
         repeat {
             print("What is the database password? ", terminator: "")
@@ -284,45 +378,13 @@ private extension SwiftServeInstance {
         } catch {
             print("Failed to save password: \(error)")
         }
-        return password
     }
 
-    static func loadExtraInfo(for environment: SwiftServiceEnvironment) -> ExtraInfo {
-        var filePath = "extra_info.json"
-        switch environment {
-        case .development:
-            filePath = "dev_\(filePath)"
-        case .test:
-            filePath = "test_\(filePath)"
-        case .production:
-            break
-        }
-        if let string = try? String(contentsOfFile: filePath)
-            , let data = string.data(using: .utf8)
-            , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
-        {
-            return extraInfo
-        }
-
-        let extraInfo: ExtraInfo = try! CommandLineDecoder.prompt()
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(extraInfo)
-            let string = String(data: data, encoding: .utf8) ?? ""
-            try string.write(toFile: filePath, atomically: true, encoding: .utf8)
-        } catch {
-            print("Failed to save extra info: \(error)")
-        }
-
-        return extraInfo
-    }
-
-    func loadDatabaseSetup() {
+    func loadDatabaseSetup() throws {
         DatabaseSetup = DatabaseSpec(
             name: self.databaseName,
             username: self.databaseRole,
-            password: SwiftServeInstance.loadDatabasePassword(for: self.environment)
+            password: try SwiftServeInstance.loadDatabasePassword(for: self.environment)
         )
     }
 
@@ -336,6 +398,13 @@ private extension SwiftServeInstance {
             let data = try encoder.encode(spec)
             let string = String(data: data, encoding: .utf8) ?? ""
             print(string)
+        }
+
+        self.commandLineParser.command(named: "config") { parser in
+            try parser.parse()
+
+            type(of: self).configDatabasePassword(for: self.environment)
+            type(of: self).configExtraInfo(for: self.environment)
         }
 
         self.commandLineParser.command(named: "db") { parser in
