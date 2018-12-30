@@ -16,7 +16,7 @@ class DayRouter: ParameterizedBlogRouter<((Int, Int), Int)> {
                     return .unhandled
                 }
                 return .handled(try request.response(
-                    template: "Views/navigation.html",
+                    template: "Views/Blog/Navigation.html",
                     build: { context in
                         context["title"] = "Posts in \(month)/\(day)/\(date.0.year)"
                         context["content"] = content
