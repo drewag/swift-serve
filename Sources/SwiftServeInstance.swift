@@ -64,7 +64,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router, ErrorGen
     public var extraInfo: ExtraInfo {
         guard let loadedExtraInfo = self.loadedExtraInfo else {
             do {
-                let loaded = try SwiftServeInstance.loadExtraInfo(for: self.environment)
+                let loaded = try SwiftServeInstance.loadExtraInfo(for: self.environment, contents: nil)
                 self.loadedExtraInfo = loaded
                 return loaded
             }
@@ -305,10 +305,10 @@ private extension SwiftServeInstance {
         return path
     }
 
-    static func loadExtraInfo(for environment: SwiftServiceEnvironment) throws -> ExtraInfo {
+    static func loadExtraInfo(for environment: SwiftServiceEnvironment, contents: String?) throws -> ExtraInfo {
         let oldPath = self.pathForExtraInfo(for: environment, old: true)
         let newPath = self.pathForExtraInfo(for: environment, old: false)
-        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
+        guard let string = contents ?? (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
             , let data = string.data(using: .utf8)
             , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
             else
@@ -318,10 +318,10 @@ private extension SwiftServeInstance {
         return extraInfo
     }
 
-    static func loadPartialExtraInfo(for environment: SwiftServiceEnvironment) -> [String:String] {
+    static func loadPartialExtraInfo(for environment: SwiftServiceEnvironment, contents: String?) -> [String:String] {
         let oldPath = self.pathForExtraInfo(for: environment, old: true)
         let newPath = self.pathForExtraInfo(for: environment, old: false)
-        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
+        guard let string = contents ?? (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
             , let data = string.data(using: .utf8)
             , let partial = try? JSONDecoder().decode([String:String].self, from: data)
             else
@@ -331,30 +331,40 @@ private extension SwiftServeInstance {
         return partial
     }
 
-    static func configExtraInfo(for environment: SwiftServiceEnvironment) {
-        if nil != (try? self.loadExtraInfo(for: environment)) {
+    static func configExtraInfo(for environment: SwiftServiceEnvironment, contents: String?, askAboutReconfigure: Bool) -> String? {
+        if nil != (try? self.loadExtraInfo(for: environment, contents: contents)) {
+            guard askAboutReconfigure else {
+                return contents
+            }
             print("Extra info is already configured, would you like to override it? (y/N) ", terminator: "")
             let response = readLine(strippingNewline: true) ?? ""
             guard response.lowercased() == "y" else {
-                return
+                return contents
             }
         }
-        
+
         let filePath = self.pathForExtraInfo(for: environment, old: false)
-        let extraInfo: ExtraInfo = try! CommandLineDecoder.prompt(defaults: self.loadPartialExtraInfo(for: environment))
+        let extraInfo: ExtraInfo = try! CommandLineDecoder.prompt(defaults: self.loadPartialExtraInfo(for: environment, contents: contents))
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(extraInfo)
             let string = String(data: data, encoding: .utf8) ?? ""
-            try string.write(toFile: filePath, atomically: true, encoding: .utf8)
+            if contents == nil {
+                try string.write(toFile: filePath, atomically: true, encoding: .utf8)
+            }
+            return string
         } catch {
             print("Failed to save extra info: \(error)")
+            return nil
         }
     }
 
-    static func configDatabasePassword(for environment: SwiftServiceEnvironment) {
+    static func configDatabasePassword(for environment: SwiftServiceEnvironment, askAboutReconfigure: Bool) {
         if nil != (try? self.loadDatabasePassword(for: environment)) {
+            guard askAboutReconfigure else {
+                return
+            }
             print("A database password is already configured, would you like to override it? (y/N) ", terminator: "")
             let response = readLine(strippingNewline: true) ?? ""
             guard response.lowercased() == "y" else {
@@ -401,10 +411,22 @@ private extension SwiftServeInstance {
         }
 
         self.commandLineParser.command(named: "config") { parser in
+            let contentsPromise = parser.optionalString(named: "contents")
+            let noPassword = parser.option(named: "no-password", abbreviatedWith: "p")
+            let noReconfigure = parser.option(named: "no-reconfigure", abbreviatedWith: "r")
+
             try parser.parse()
 
-            type(of: self).configDatabasePassword(for: self.environment)
-            type(of: self).configExtraInfo(for: self.environment)
+            if !noPassword.wasPresent {
+                type(of: self).configDatabasePassword(for: self.environment, askAboutReconfigure: !noReconfigure.wasPresent)
+            }
+
+            let contents = contentsPromise.parsedValue
+            if let new = type(of: self).configExtraInfo(for: self.environment, contents: contents, askAboutReconfigure: !noReconfigure.wasPresent) {
+                if contents != nil {
+                    print(new)
+                }
+            }
         }
 
         self.commandLineParser.command(named: "db") { parser in
