@@ -60,14 +60,14 @@ public struct Email {
     public var headers = [String:String]()
 
     public init(to: String, subject: String, from: String, replyTo: String? = nil, HTMLBody: String) {
-        try! self.init(to: to, subject: subject, from: from) { builder in
+        self.init(to: to, subject: subject, from: from) { builder in
             builder.replyTo = replyTo
             builder.append(html: HTMLBody)
         }
     }
 
     public init(to: String, subject: String, from: String, replyTo: String? = nil, plainBody: String) {
-        try! self.init(to: to, subject: subject, from: from) { builder in
+        self.init(to: to, subject: subject, from: from) { builder in
             builder.replyTo = replyTo
             builder.append(plain: plainBody)
         }

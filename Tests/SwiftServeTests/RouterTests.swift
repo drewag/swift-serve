@@ -30,7 +30,7 @@ struct TestRouter: Router {
 }
 
 class RouterTests: XCTestCase {
-    let server = TestServer(port: 0, router: TestRouter())
+    let server = TestServer(port: 0, router: TestRouter(), errorViewRoot: "Error")
 
     override func setUp() {
         super.setUp()
