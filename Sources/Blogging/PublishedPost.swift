@@ -16,24 +16,18 @@ class PublishedPost: Post {
     }
 
     var publishedYearString: String {
-        let calendar = Calendar.current
-        let units = Set<Calendar.Component>([.year])
-        let components = calendar.dateComponents(units, from: self.published)
-        return "\(components.year!)"
+        let year = Calendar.current.component(.year, from: self.published)
+        return "\(year)"
     }
 
     var publishedMonthString: String {
-        let calendar = Calendar.current
-        let units = Set<Calendar.Component>([.month])
-        let components = calendar.dateComponents(units, from: self.published)
-        return components.month! < 10 ? "0\(components.month!)" : "\(components.month!)"
+        let month = Calendar.current.component(.month, from: self.published)
+        return month < 10 ? "0\(month)" : "\(month)"
     }
 
     var publishedDayString: String {
-        let calendar = Calendar.current
-        let units = Set<Calendar.Component>([.day])
-        let components = calendar.dateComponents(units, from: self.published)
-        return components.day! < 10 ? "0\(components.day!)" : "\(components.day!)"
+        let day = Calendar.current.component(.day, from: self.published)
+        return day < 10 ? "0\(day)" : "\(day)"
     }
 
     var permanentRelativePath: String {
