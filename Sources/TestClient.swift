@@ -46,7 +46,7 @@ struct TestClientResponse: ClientResponse {
 
 public class TestClient: Client {
     public static var executedRequests = [TestClientRequest]()
-    public static var onRequest: ((ClientRequest) -> (status: HTTPStatus, body: Data))?
+    public static var onRequest: ((ClientRequest) -> (status: HTTPStatus, body: Data)?)?
     public static var routerToHandleRequest: ((TestClientRequest) -> ((Router, Connection)?))?
 
     public required init(url: URL) throws {
@@ -56,7 +56,10 @@ public class TestClient: Client {
         if let request = request as? TestClientRequest {
             type(of: self).executedRequests.append(request)
         }
-        guard let block = type(of: self).onRequest else {
+        guard let block = type(of: self).onRequest
+            , let result = block(request)
+            else
+        {
             if let request = request as? TestClientRequest {
                 if let (router, connection) = type(of: self).routerToHandleRequest?(request) {
                     let request = TestRequest(connection: connection, method: request.method, endpoint: request.url, data: request.body, headers: request.headers)
@@ -84,7 +87,6 @@ public class TestClient: Client {
             }
             return TestClientResponse(body: Data(), status: .ok)
         }
-        let result = block(request)
         return TestClientResponse(body: result.body, status: result.status)
     }
 }
