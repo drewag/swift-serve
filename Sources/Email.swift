@@ -7,6 +7,7 @@
 
 import Foundation
 import Swiftlier
+import Stencil
 
 public class EmailSentEvent: EventType { public typealias CallbackParam = Email }
 
@@ -63,6 +64,44 @@ public struct Email {
         self.init(to: to, subject: subject, from: from) { builder in
             builder.replyTo = replyTo
             builder.append(html: HTMLBody)
+        }
+    }
+
+    public init(
+        to: String,
+        subject: String,
+        from: String,
+        replyTo: String? = nil,
+        returnPath: String? = nil,
+        template: String,
+        paragraphStyle: String = "font-family:sans-serif;font-size:14px;font-weight:normal;margin:0;margin-bottom:15px",
+        build: @escaping (inout [String:Any]) throws -> ()
+        ) throws
+    {
+        try self.init(to: to, subject: subject, from: from) { builder in
+            builder.replyTo = replyTo
+            builder.returnPath = returnPath
+
+            var environment = Environment(loader: FileSystemLoader(paths: ["."]))
+            let ext = Extension()
+            ext.registerSimpleTag("p", handler: { context in
+                return "<p style=\"\(paragraphStyle)\">"
+            })
+            environment.extensions.append(ext)
+            var context = [String:Any]()
+
+            try build(&context)
+
+            if template.hasSuffix(".html") {
+                builder.append(html: try environment.renderTemplate(name: template, context: context))
+            }
+            else if template.hasSuffix(".txt") {
+                builder.append(plain: try environment.renderTemplate(name: template, context: context))
+            }
+            else {
+                builder.append(html: try environment.renderTemplate(name: "\(template).html", context: context))
+                builder.append(plain: try environment.renderTemplate(name: "\(template).txt", context: context))
+            }
         }
     }
 
@@ -187,4 +226,3 @@ private extension Email {
         return try FileSystem.default.rootDirectory.subdirectory("tmp").file("\(self.id).eml")
     }
 }
-
