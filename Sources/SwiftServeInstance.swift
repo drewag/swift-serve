@@ -46,11 +46,11 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router, ErrorGen
     public let databaseChanges: [DatabaseChange]?
     public let routes: [Route]
     public let allowCrossOriginRequests: Bool
+    public let webConfiguration: WebConfiguration?
 
     fileprivate let customizeCommandLineParser: ((Parser) -> ())?
     fileprivate let commandLineParser: Parser
     fileprivate let dataDirectories: [String]
-    fileprivate let webConfiguration: WebConfiguration?
     fileprivate let blogConfiguration: BlogConfiguration?
     fileprivate let blogRouter: BlogRouter?
     fileprivate let extraSchemes: [Scheme]

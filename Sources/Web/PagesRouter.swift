@@ -8,6 +8,10 @@
 import Swiftlier
 
 class PagesRouter: WebRouter {
+    override func preprocess(request: Request, context: inout [String : Any]) throws {
+        try self.configuration.preprocess?(request, &context)
+    }
+
     override var routes: [Route] {
         return [
             .getWithParam(consumeEntireSubPath: true, handler: { (request, pagePath: String) in

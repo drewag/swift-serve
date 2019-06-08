@@ -12,6 +12,8 @@ class WebRouter: Router {
         return []
     }
 
+    func preprocess(request: Request, context: inout [String : Any]) throws {}
+
     init(configuration: WebConfiguration) {
         self.configuration = configuration
     }

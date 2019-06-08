@@ -12,10 +12,11 @@ let package = Package(
         .package(url: "https://github.com/drewag/command-line-parser.git", from: "3.0.0"),
         .package(url: "https://github.com/kylef/Stencil.git", from: "0.11.0"),
         .package(url: "https://github.com/PerfectlySoft/Perfect-Markdown.git", from: "3.0.0"),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.0.0"),
     ],
     targets: [
         .target(name: "SwiftServe", dependencies: [
-            "PostgreSQL", "CommandLineParser", "Stencil", "PerfectMarkdown",
+            "PostgreSQL", "CommandLineParser", "Stencil", "PerfectMarkdown", "CryptoSwift"
         ], path: "Sources"),
         .testTarget(name: "SwiftServeTests", dependencies: ["SwiftServe"]),
     ]
