@@ -91,6 +91,102 @@ extension Request {
         )
     }
 
+    public func responseCreating<Value: Decodable>(
+        type: Value.Type,
+        template name: String,
+        contentType: String =  "text/html; charset=utf-8",
+        status: HTTPStatus = .ok,
+        headers: [String:String] = [:],
+        buildBeforeParse: ((inout [String:Any]) throws -> ())? = nil,
+        build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
+        ) throws -> Response
+    {
+        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        var context = [String:Any]()
+        try self.preprocessStack.process(request: self, context: &context)
+        do {
+            try buildBeforeParse?(&context)
+            let value: Value? = try self.decodableFromForm()
+            if let response = try build?(value, &context) {
+                return response
+            }
+        }
+        catch {
+            for (key, value) in self.formValues() {
+                let key = key.replacingOccurrences(of: "[", with: "_")
+                    .replacingOccurrences(of: "]", with: "_")
+                context[key] = context[key] ?? value
+            }
+            context["error"] = error.localizedDescription
+        }
+        try self.postprocessStack.process(request: self, context: &context)
+        let html = try environment.renderTemplate(name: name, context: context)
+        var headers = headers
+        if headers["Content-Type"] == nil {
+            headers["Content-Type"] = contentType
+        }
+        if headers["Content-Disposition"] == nil {
+            headers["Content-Disposition"] = "inline"
+        }
+        return self.response(body: html, status: status, headers: headers)
+    }
+
+    public func responseEditing<Value: Codable>(
+        _ input: Value,
+        template name: String,
+        contentType: String =  "text/html; charset=utf-8",
+        status: HTTPStatus = .ok,
+        headers: [String:String] = [:],
+        buildBeforeParse: ((inout [String:Any]) throws -> ())? = nil,
+        build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
+        ) throws -> Response
+    {
+        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        var context = [String:Any]()
+        try self.preprocessStack.process(request: self, context: &context)
+        switch self.method {
+        case .post:
+            do {
+                try buildBeforeParse?(&context)
+                let value: Value? = try self.decodableFromForm()
+                if let response = try build?(value, &context) {
+                    return response
+                }
+            }
+            catch {
+                for (key, value) in self.formValues() {
+                    let key = key.replacingOccurrences(of: "[", with: "_")
+                        .replacingOccurrences(of: "]", with: "_")
+                    context[key] = context[key] ?? value
+                }
+                context["error"] = error.localizedDescription
+            }
+        default:
+            do {
+                try buildBeforeParse?(&context)
+                let encoder = FormEncoder()
+                try input.encode(to: encoder)
+                for (key, value) in encoder.values.rawValues {
+                    context[key] = value
+                }
+            }
+            catch {
+                context["error"] = error.localizedDescription
+            }
+        }
+        try self.postprocessStack.process(request: self, context: &context)
+        let html = try environment.renderTemplate(name: name, context: context)
+        var headers = headers
+        if headers["Content-Type"] == nil {
+            headers["Content-Type"] = contentType
+        }
+        if headers["Content-Disposition"] == nil {
+            headers["Content-Disposition"] = "inline"
+        }
+        return self.response(body: html, status: status, headers: headers)
+    }
+
+
     public func response(template name: String, contentType: String =  "text/html; charset=utf-8", status: HTTPStatus = .ok, headers: [String:String] = [:], build: ((inout [String:Any]) -> ())? = nil) throws -> Response {
         let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
         var context = [String:Any]()

@@ -70,7 +70,7 @@ public struct MimePart: ErrorGenerating {
         try self.init(rawContents: string)
     }
 
-    init(content: Content, name: String?) {
+    public init(content: Content, name: String?) {
         self.content = content
         self.headers = [:]
         self.contentType = content.contentType(withName: name)
@@ -515,7 +515,7 @@ extension MimePart.Content {
             body = parts.rawMIME(withBoundary: boundary)
         case .multipartFormData(let parts):
             let boundary = UUID().uuidString
-            extraHeaders["Content-Type"] = ContentType.multipartAlternative(boundary: boundary).raw
+            extraHeaders["Content-Type"] = ContentType.multipartFormData(boundary: boundary).raw
             extraHeaders["Content-Disposition"] = ContentDisposition.none.raw
             extraHeaders["Content-Transfer-Encoding"] = ContentTransferEncoding.none.raw
             body = parts.rawMIME(withBoundary: boundary)

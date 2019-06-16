@@ -57,6 +57,29 @@ extension Request {
         return try? decoder.decode(Value.self, from: self.data)
     }
 
+    public func decodableFromForm<Value: Decodable>(source: CodingLocation = .local, purpose: CodingPurpose = .create, userInfo: [CodingUserInfoKey:Any] = [:]) throws -> Value? {
+        switch self.method {
+        case .post:
+            do {
+                let value: Value = try self.values().decodable(source: source, purpose: purpose, userInfo: userInfo)
+                return value
+            }
+            catch let error as DecodingError {
+                switch error {
+                case .keyNotFound(let key, _):
+                    throw FormDecoder.error("\(key.stringValue) is required")
+                default:
+                    throw error
+                }
+            }
+            catch {
+                throw error
+            }
+        default:
+            return nil
+        }
+    }
+
     public var json: JSON? {
         return try? JSON(data: self.data)
     }
@@ -98,6 +121,51 @@ extension Request {
         }
 
         return output
+    }
+
+    public func values() -> FormValues {
+        var values = FormValues()
+
+        var urlComponents = self.endpoint.absoluteString.components(separatedBy: "?")
+        if urlComponents.count > 1 {
+            urlComponents.removeFirst()
+            let query = urlComponents.joined()
+            for variable in query.components(separatedBy: "&") {
+                var components = variable.components(separatedBy: "=")
+                if components.count > 1 {
+                    let key = components.removeFirst()
+                    values.add(
+                        key: key.removingPercentEncoding ?? key,
+                        value: components.joined().removingPercentEncoding ?? components.joined()
+                    )
+                }
+            }
+        }
+
+        switch self.contentType {
+        case .multipartFormData:
+            if let part = self.mimePart {
+                switch part.content {
+                case .multipartFormData(let parts):
+                    for part in parts {
+                        if let name = part.name, let plain = part.plain {
+                            values.add(key: name, value: plain)
+                        }
+                    }
+                default:
+                    break
+                }
+            }
+        default:
+            if let string = self.string {
+                for (key, value) in FormUrlEncoded.values(from: string) {
+                    values.add(key: key, value: value)
+                }
+            }
+        }
+
+
+        return values
     }
 
     public func createCookie(withName name: String, value: String, maxAge: TimeInterval, path: String? = nil) -> String {

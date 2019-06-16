@@ -35,6 +35,10 @@ extension Server {
     } 
 
     public func response(for error: Error, from request: Request) -> Response {
+        if let redirect = error as? RedirectingError {
+            return request.response(redirectingTo: redirect.destination, .temporarily, headers: redirect.headers)
+        }
+
         let reportableError = self.error("handling request", from: error)
 
         let status: HTTPStatus
