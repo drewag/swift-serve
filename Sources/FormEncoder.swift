@@ -26,7 +26,95 @@ class FormEncoder: Encoder, ErrorGenerating {
     }
 
     func singleValueContainer() -> SingleValueEncodingContainer {
-        fatalError("encoding a single value container is not supported by the FormEncoder")
+        return SingleValueFormEncodingContainer(encoder: self, codingPath: self.codingPath)
+    }
+}
+
+struct SingleValueFormEncodingContainer: SingleValueEncodingContainer {
+    let codingPath: [CodingKey]
+    let encoder: FormEncoder
+
+    init(encoder: FormEncoder, codingPath: [CodingKey]) {
+        self.encoder = encoder
+        self.codingPath = codingPath
+    }
+
+    mutating func encodeNil() throws {
+        try self.encode("")
+    }
+
+    mutating func encode(_ value: Bool) throws {
+        try self.encode(value ? "Yes" : "No")
+    }
+
+    mutating func encode(_ value: String) throws {
+        self.encoder.values.string = value
+    }
+
+    mutating func encode(_ value: Double) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Float) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Int) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Int8) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Int16) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Int32) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: Int64) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: UInt) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: UInt8) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: UInt16) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: UInt32) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode(_ value: UInt64) throws {
+        try self.encode("\(value)")
+    }
+
+    mutating func encode<T>(_ value: T) throws where T : Encodable {
+        if let date = value as? Date {
+            try self.encode(date.iso8601DateTime)
+        }
+        else if let string = value as? String {
+            try self.encode(string)
+        }
+        else if let email = value as? EmailAddress {
+            try self.encode(email.string)
+        }
+        else {
+            let encoder = FormEncoder(codingPath: self.codingPath)
+            encoder.userInfo = self.encoder.userInfo
+            try value.encode(to: encoder)
+            self.encoder.values.string = encoder.values.string
+        }
     }
 }
 
@@ -103,16 +191,6 @@ struct UnkeyedFormEncodingContainer: UnkeyedEncodingContainer {
     }
 
     mutating func encode<T>(_ value: T) throws where T : Encodable {
-        guard !(Mirror(reflecting: value).displayStyle == .optional) else {
-            let encoder = FormEncoder(codingPath: self.codingPath)
-            encoder.userInfo = self.encoder.userInfo
-            try value.encode(to: encoder)
-            for value in encoder.values.array {
-                self.encoder.values.array.append(value)
-            }
-            return
-        }
-
         if let date = value as? Date {
             try self.encode(date.iso8601DateTime)
         }
@@ -214,16 +292,6 @@ class KeyedFormEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol
     }
 
     func encode<T>(_ value: T, forKey key: Key) throws where T : Encodable {
-        guard !(Mirror(reflecting: value).displayStyle == .optional) else {
-            let encoder = FormEncoder(codingPath: [key])
-            encoder.userInfo = self.encoder.userInfo
-            try value.encode(to: encoder)
-            for (key, value) in encoder.values.dictionary {
-                self.encoder.values.dictionary[key] = value
-            }
-            return
-        }
-
         if let date = value as? Date {
             try self.encode(date.iso8601DateTime, forKey: key)
         }

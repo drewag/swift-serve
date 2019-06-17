@@ -87,6 +87,54 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
         return saved
     }
 
+    @discardableResult
+    public func update(
+        _ user: User,
+        settingEmail email: EmailAddress,
+        currentPassword: String,
+        password: String?,
+        extraProperties: User.ExtraProperties,
+        baseUrl: URL,
+        info: CustomizableInfo
+        ) throws -> User
+    {
+        var user = user
+        guard currentPassword.encrypt(withHash: user.passwordSalt) == user.encryptedPassword else {
+            throw self.userError("saving", because: "current password was incorrect")
+        }
+
+        if let newPassword = password {
+            let salt = String(randomOfLength: 16)
+            user.passwordSalt = salt
+            user.encryptedPassword = newPassword.encrypt(withHash: salt)
+        }
+
+        if email != user.email {
+            guard try self.user(withEmail: email) == nil else {
+                throw self.userError("saving", because: "a user with that email already exists")
+            }
+            user.email = email
+            var verificationToken: String = ""
+            repeat {
+                verificationToken = String(randomOfLength: 16)
+            }
+            while try self.user(withVerificationToken: verificationToken) != nil
+            user.emailVerificationToken = verificationToken
+        }
+
+        user.update(extraProperties: extraProperties)
+        try self.connection.execute(try user
+            .update()
+            .filtered(User.filter(forId: user.id))
+        )
+
+        if let token = user.emailVerificationToken {
+            try self.sendVerificationEmail(for: user, withToken: token, baseUrl: baseUrl, info: info)
+        }
+
+        return user
+    }
+
     public func verifyUser(withToken token: String) throws -> User {
         guard !token.isEmpty else {
             throw self.userError("verifying account", because: "this link is invalid")

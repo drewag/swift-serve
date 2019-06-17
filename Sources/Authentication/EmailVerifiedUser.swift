@@ -15,7 +15,7 @@ public protocol EmailVerifiedUser: TableStorable, Codable, ErrorGenerating {
     var id: Int! {get set}
     var created: Date {get}
 
-    var email: EmailAddress {get}
+    var email: EmailAddress {get set}
     var passwordSalt: String {get set}
     var encryptedPassword: String {get set}
 
@@ -30,6 +30,8 @@ public protocol EmailVerifiedUser: TableStorable, Codable, ErrorGenerating {
     static func filter(forResetPasswordToken token: String) -> Predicate
 
     init(email: EmailAddress, salt: String, encryptedPassword: String, emailVerificationToken: String?, extraProperties: ExtraProperties)
+
+    mutating func update(extraProperties: ExtraProperties)
 }
 
 extension EmailVerifiedUser {

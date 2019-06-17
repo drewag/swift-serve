@@ -152,6 +152,15 @@ extension Request {
                 if let response = try build?(value, &context) {
                     return response
                 }
+                if let value = value {
+                    let encoder = FormEncoder()
+                    try value.encode(to: encoder)
+                    for (key, value) in encoder.values.rawValues {
+                        let key = key.replacingOccurrences(of: "[", with: "_")
+                            .replacingOccurrences(of: "]", with: "_")
+                        context[key] = context[key] ?? value
+                    }
+                }
             }
             catch {
                 for (key, value) in self.formValues() {
@@ -167,7 +176,12 @@ extension Request {
                 let encoder = FormEncoder()
                 try input.encode(to: encoder)
                 for (key, value) in encoder.values.rawValues {
-                    context[key] = value
+                    let key = key.replacingOccurrences(of: "[", with: "_")
+                        .replacingOccurrences(of: "]", with: "_")
+                    context[key] = context[key] ?? value
+                }
+                if let response = try build?(nil, &context) {
+                    return response
                 }
             }
             catch {

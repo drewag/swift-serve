@@ -6,6 +6,10 @@
 //
 
 extension Request {
+    public func user<User: EmailVerifiedUser>() -> User? {
+        return try? self.unverifiedUser()
+    }
+
     public func unverifiedUser<User: EmailVerifiedUser>() throws -> User {
         guard let session = try UserSession(request: self) else {
             throw self.networkError("authenticating", withStatus: .badRequest, because: "a session has not been specified")

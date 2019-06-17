@@ -53,6 +53,58 @@ class FormEncoderTests: XCTestCase {
         XCTAssertTrue(rawValues.contains(where: {$0.0 == "string1" && $0.1 == "some string"}))
     }
 
+    func testEnum() throws {
+        enum Kind: Int, Codable {
+            case first, second
+        }
+
+        struct Value: Encodable {
+            let kind: Kind = .first
+            let other: Kind? = .second
+        }
+
+        let value = Value()
+        let encoder = FormEncoder()
+        try value.encode(to: encoder)
+
+        let rawValues = encoder.values.rawValues
+        XCTAssertEqual(rawValues.count, 2)
+        XCTAssertTrue(rawValues.contains(where: {$0.0 == "kind" && $0.1 == "0"}))
+        XCTAssertTrue(rawValues.contains(where: {$0.0 == "other" && $0.1 == "1"}))
+    }
+
+    func testAlwaysEncodedOptionals() throws {
+        enum Kind: Int, Codable {
+            case first, second
+        }
+
+        struct Value: Encodable {
+            let string1: String? = "some string"
+            let kind: Kind? = .first
+
+            enum CodingKeys: String, CodingKey {
+                case string1, kind
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+
+                try container.encode(self.string1, forKey: .string1)
+                try container.encode(self.kind, forKey: .kind)
+            }
+        }
+
+        let value = Value()
+        let encoder = FormEncoder()
+        try value.encode(to: encoder)
+
+        let rawValues = encoder.values.rawValues
+        XCTAssertEqual(rawValues.count, 2)
+        XCTAssertTrue(rawValues.contains(where: {$0.0 == "string1" && $0.1 == "some string"}))
+        XCTAssertTrue(rawValues.contains(where: {$0.0 == "kind" && $0.1 == "0"}))
+
+    }
+
     func testNested() throws {
         struct Value: Encodable {
             struct Student: Encodable {
