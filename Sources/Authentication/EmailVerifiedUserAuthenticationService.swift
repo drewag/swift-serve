@@ -202,19 +202,19 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
 
         return user
     }
-}
 
-private extension EmailVerifiedUserAuthenticationService {
-    func user(withVerificationToken token: String) throws -> User? {
-        let select = User.select().filtered(User.filter(forVerificationToken: token))
+    public func user(withId id: Int) throws -> User? {
+        let select = User.select().filtered(User.filter(forId: id))
         guard let row = try self.connection.execute(select).rows.next() else {
             return nil
         }
         return try row.decode(purpose: .create)
     }
+}
 
-    func user(withId id: Int) throws -> User? {
-        let select = User.select().filtered(User.filter(forId: id))
+private extension EmailVerifiedUserAuthenticationService {
+    func user(withVerificationToken token: String) throws -> User? {
+        let select = User.select().filtered(User.filter(forVerificationToken: token))
         guard let row = try self.connection.execute(select).rows.next() else {
             return nil
         }
