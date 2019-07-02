@@ -101,7 +101,7 @@ extension Request {
         build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
         ) throws -> Response
     {
-        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        let environment = self.createEnvironment()
         var context = [String:Any]()
         try self.preprocessStack.process(request: self, context: &context)
         do {
@@ -141,7 +141,8 @@ extension Request {
         build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
         ) throws -> Response
     {
-        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        let environment = self.createEnvironment()
+
         var context = [String:Any]()
         try self.preprocessStack.process(request: self, context: &context)
         switch self.method {
@@ -190,7 +191,7 @@ extension Request {
 
 
     public func response(template name: String, contentType: String =  "text/html; charset=utf-8", status: HTTPStatus = .ok, headers: [String:String] = [:], build: ((inout [String:Any]) -> ())? = nil) throws -> Response {
-        let environment = Environment(loader: FileSystemLoader(paths: ["./"]))
+        let environment = self.createEnvironment()
         var context = [String:Any]()
         try self.preprocessStack.process(request: self, context: &context)
         build?(&context)
@@ -215,5 +216,30 @@ extension Response  {
         else {
             return self.status.description
         }
+    }
+}
+
+private extension Request {
+    func createEnvironment() -> Environment {
+        let ext = Extension()
+
+        ext.registerFilter("plainToHtml", filter: { value in
+            guard let string = value as? String else {
+                return value
+            }
+
+            return string.replacingOccurrences(of: "<", with: "&lt;")
+                .replacingOccurrences(of: "\n", with: "<br/>")
+        })
+
+        ext.registerFilter("escapeHtml", filter: { value in
+            guard let string = value as? String else {
+                return value
+            }
+
+            return string.replacingOccurrences(of: "<", with: "&lt;")
+        })
+
+        return Environment(loader: FileSystemLoader(paths: ["./"]), extensions: [ext])
     }
 }
