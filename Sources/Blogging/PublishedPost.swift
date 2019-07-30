@@ -16,21 +16,21 @@ class PublishedPost: Post {
     }
 
     var publishedYearString: String {
-        let calendar = Calendar.current
+        let calendar = Calendar(identifier: .gregorian)
         let units = Set<Calendar.Component>([.year])
         let components = calendar.dateComponents(units, from: self.published)
         return "\(components.year!)"
     }
 
     var publishedMonthString: String {
-        let calendar = Calendar.current
+        let calendar = Calendar(identifier: .gregorian)
         let units = Set<Calendar.Component>([.month])
         let components = calendar.dateComponents(units, from: self.published)
         return components.month! < 10 ? "0\(components.month!)" : "\(components.month!)"
     }
 
     var publishedDayString: String {
-        let calendar = Calendar.current
+        let calendar = Calendar(identifier: .gregorian)
         let units = Set<Calendar.Component>([.day])
         let components = calendar.dateComponents(units, from: self.published)
         return components.day! < 10 ? "0\(components.day!)" : "\(components.day!)"
