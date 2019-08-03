@@ -1,10 +1,11 @@
 import Foundation
 import Swiftlier
 import SQL
+import Decree
 
-public protocol Request: CustomStringConvertible, ErrorGenerating {
+public protocol Request: CustomStringConvertible {
     var databaseConnection: Connection {get}
-    var method: HTTPMethod {get}
+    var method: Decree.Method {get}
     var endpoint: URL {get}
     var data: Data {get}
     var headers: [String:String] {get}
@@ -15,8 +16,8 @@ public protocol Request: CustomStringConvertible, ErrorGenerating {
     var preprocessStack: RequestProcessStack {get set}
     var postprocessStack: RequestProcessStack {get set}
 
-    func response(withData data: Data, status: HTTPStatus, error: ReportableError?, headers: [String:String]) -> Response
-    func response(withFileAt path: String, status: HTTPStatus, error: ReportableError?, headers: [String:String]) throws -> Response
+    func response(withData data: Data, status: HTTPStatus, error: SwiftlierError?, headers: [String:String]) -> Response
+    func response(withFileAt path: String, status: HTTPStatus, error: SwiftlierError?, headers: [String:String]) throws -> Response
 }
 
 extension Request {

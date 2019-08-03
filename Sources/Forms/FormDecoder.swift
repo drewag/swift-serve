@@ -8,7 +8,7 @@
 import Foundation
 import Swiftlier
 
-class FormDecoder: Decoder, ErrorGenerating {
+class FormDecoder: Decoder {
     struct SimpleError: LocalizedError {
         let description: String
 
@@ -517,7 +517,7 @@ class KeyedFormDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
     }
 
     func decode(_ type: Data.Type, forKey key: Key) throws -> Data {
-        throw self.decoder.error("decoding", because: "data not supported by form decoder")
+        throw GenericSwiftlierError("decoding", because: "data not supported by form decoder")
     }
 
     func decode<D>(_ type: D.Type, forKey key: Key) throws -> D where D: Swift.Decodable {

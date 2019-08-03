@@ -10,7 +10,7 @@ import Foundation
 import SQL
 import Swiftlier
 
-public struct Subscriber: TableStorable, ErrorGenerating {
+public struct Subscriber: TableStorable {
     public static let tableName = "subscribers"
 
     public typealias CodingKeys = Fields

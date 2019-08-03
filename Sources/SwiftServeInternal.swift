@@ -42,7 +42,7 @@ private struct SwiftServeInternalCore: TableStorable, Codable {
     }
 }
 
-struct SwiftServeInternal: TableStorable, Codable, ErrorGenerating {
+struct SwiftServeInternal: TableStorable, Codable {
     typealias Fields = CodingKeys
     static let tableName = "swift_serve_internal"
 
@@ -69,7 +69,7 @@ struct SwiftServeInternal: TableStorable, Codable, ErrorGenerating {
 
         let result = try connection.execute(SwiftServeInternal.select().limited(to: 1))
         guard let row = result.rows.next() else {
-            throw SwiftServeInternal.error("migrating", because: "an internal swift serve version was not found")
+            throw GenericSwiftlierError("migrating", because: "an internal swift serve version was not found")
         }
 
         self = try row.decode(purpose: .create)
@@ -86,7 +86,7 @@ private extension SwiftServeInternal {
             case 0:
                 queries = SwiftServeInternal.addColumn(forField: .subscribers).forwardQueries
             default:
-                throw self.error("migrating", because: "invalid core version")
+                throw GenericSwiftlierError("migrating", because: "invalid core version")
             }
             for query in queries {
                 try connection.executeIgnoringResult(query)

@@ -9,7 +9,7 @@ import Foundation
 import Swiftlier
 import SQL
 
-public protocol EmailVerifiedUser: TableStorable, Codable, ErrorGenerating {
+public protocol EmailVerifiedUser: TableStorable, Codable {
     associatedtype ExtraProperties
 
     var id: Int! {get set}
@@ -41,7 +41,7 @@ extension EmailVerifiedUser {
 
     public mutating func set(password: String) throws {
         guard password.count >= 6 else {
-            throw self.userError("setting password", because: "the password must be at least 6 characters long")
+            throw GenericSwiftlierError("setting password", because: "the password must be at least 6 characters long", byUser: true)
         }
 
         let salt = String(randomOfLength: 16)

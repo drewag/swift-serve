@@ -8,7 +8,7 @@
 import Foundation
 import Swiftlier
 
-class FormEncoder: Encoder, ErrorGenerating {
+class FormEncoder: Encoder {
     let codingPath: [CodingKey]
     var userInfo: [CodingUserInfoKey : Any] = [:]
     var values = FormValues()

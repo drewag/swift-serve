@@ -8,7 +8,7 @@
 import Foundation
 import Swiftlier
 
-public struct UserSession: ErrorGenerating {
+public struct UserSession {
     public let id: Int
     let digest: String
     let created: Date
@@ -47,7 +47,7 @@ public struct UserSession: ErrorGenerating {
             , let createdTimeInterval = TimeInterval(createdString)
             else
         {
-            throw UserSession.error("parsing session", because: "it is invalid")
+            throw GenericSwiftlierError("parsing session", because: "it is invalid")
         }
         self.id = id
         self.digest = digest

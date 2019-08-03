@@ -7,6 +7,7 @@
 //
 
 import Swiftlier
+import Decree
 
 public class Route {
     let pathComponent: PathComponent
@@ -23,28 +24,28 @@ public class Route {
 extension Route {
     // MARK: Generic
 
-    public static func route(method: HTTPMethod, path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
+    public static func route(method: Method?, path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
         return FixedHandlerRoute(path, method: method, handler: handler)
     }
 
-    public static func route(method: HTTPMethod, path: String? = nil, router: Router) -> Route {
+    public static func route(method: Method?, path: String? = nil, router: Router) -> Route {
         return FixedRouterRoute(path, method: method, router: router)
     }
 
-    public static func route(method: HTTPMethod, path: String? = nil, subRoutes: [Route]) -> Route {
+    public static func route(method: Method?, path: String? = nil, subRoutes: [Route]) -> Route {
         let router = InPlaceRouter(routes: subRoutes)
         return self.route(method: method, path: path, router: router)
     }
 
-    public static func routeWithParam<Param: CapturableType>(method: HTTPMethod, consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
+    public static func routeWithParam<Param: CapturableType>(method: Method?, consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
         return VariableRoute<Param>(method: method, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
-    public static func routeWithParam<R: ParameterizedRouter>(method: HTTPMethod, consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
+    public static func routeWithParam<R: ParameterizedRouter>(method: Method?, consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
         return VariableRouterRoute<R>(method: method, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
-    public static func routeWithParam<Param>(method: HTTPMethod, consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
+    public static func routeWithParam<Param>(method: Method?, consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
         let router = InPlaceParameterizedRouter(routes: subRoutes)
         return self.routeWithParam(method: method, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
@@ -52,27 +53,27 @@ extension Route {
     // MARK: Any
 
     public static func any(_ path: String? = nil, handler: @escaping (Request) throws -> ResponseStatus) -> Route {
-        return self.route(method: .any, path: path, handler: handler)
+        return self.route(method: nil, path: path, handler: handler)
     }
 
     public static func any(_ path: String? = nil, router: Router) -> Route {
-        return self.route(method: .any, path: path, router: router)
+        return self.route(method: nil, path: path, router: router)
     }
 
     public static func any(_ path: String? = nil, subRoutes: [Route]) -> Route {
-        return self.route(method: .any, path: path, subRoutes: subRoutes)
+        return self.route(method: nil, path: path, subRoutes: subRoutes)
     }
 
     public static func anyWithParam<Param: CapturableType>(consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) -> Route {
-        return self.routeWithParam(method: .any, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
+        return self.routeWithParam(method: nil, consumeEntireSubPath: consumeEntireSubPath, handler: handler)
     }
 
     public static func anyWithParam<R: ParameterizedRouter>(consumeEntireSubPath: Bool, router: R) -> Route where R.Param: CapturableType {
-        return self.routeWithParam(method: .any, consumeEntireSubPath: consumeEntireSubPath, router: router)
+        return self.routeWithParam(method: nil, consumeEntireSubPath: consumeEntireSubPath, router: router)
     }
 
     public static func anyWithParam<Param>(consumeEntireSubPath: Bool, subRoutes: [ParameterizedRoute<Param>]) -> Route where Param: CapturableType {
-        return self.routeWithParam(method: .any, consumeEntireSubPath: consumeEntireSubPath, subRoutes: subRoutes)
+        return self.routeWithParam(method: nil, consumeEntireSubPath: consumeEntireSubPath, subRoutes: subRoutes)
     }
 
     // MARK: Get
@@ -209,7 +210,7 @@ extension Route {
 fileprivate class FixedHandlerRoute: Route {
     let handler: (Request) throws -> ResponseStatus
 
-    init(_ prefix: String?, method: HTTPMethod, handler: @escaping (Request) throws -> ResponseStatus) {
+    init(_ prefix: String?, method: Method?, handler: @escaping (Request) throws -> ResponseStatus) {
         self.handler = handler
         if let prefix = prefix {
             super.init(pathComponent: StaticPathComponent(pattern: prefix, method: method, allowSubPaths: false))
@@ -227,7 +228,7 @@ fileprivate class FixedHandlerRoute: Route {
 fileprivate class FixedRouterRoute: Route {
     let router: Router
 
-    init(_ prefix: String?, method: HTTPMethod, router: Router) {
+    init(_ prefix: String?, method: Method?, router: Router) {
         self.router = router
         if let prefix = prefix {
             super.init(pathComponent: StaticPathComponent(pattern: prefix, method: method, allowSubPaths: true))
@@ -246,7 +247,7 @@ fileprivate class FixedRouterRoute: Route {
 fileprivate final class VariableRoute<Param: CapturableType>: Route {
     let handler: (Request, Param) throws -> ResponseStatus
 
-    init(method: HTTPMethod, consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) {
+    init(method: Method?, consumeEntireSubPath: Bool, handler: @escaping (Request, Param) throws -> ResponseStatus) {
         self.handler = handler
         let pathComponent = VariablePathComponent(type: Param.self, method: method, consumeEntireSubPath: consumeEntireSubPath)
         super.init(pathComponent: pathComponent)
@@ -261,7 +262,7 @@ fileprivate final class VariableRoute<Param: CapturableType>: Route {
 fileprivate final class VariableRouterRoute<R: ParameterizedRouter>: Route where R.Param: CapturableType {
     let router: R
 
-    init(method: HTTPMethod, consumeEntireSubPath: Bool, router: R) {
+    init(method: Method?, consumeEntireSubPath: Bool, router: R) {
         self.router = router
         let pathComponent = VariablePathComponent(type: R.Param.self, method: method, consumeEntireSubPath: consumeEntireSubPath)
         super.init(pathComponent: pathComponent)

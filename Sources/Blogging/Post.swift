@@ -21,12 +21,12 @@ struct Tag: Hashable {
         self.link = string.lowercased().replacingOccurrences(of: " ", with: "-")
     }
 
-    var hashValue: Int {
-        return self.display.hashValue
+    func hash(into hasher: inout Hasher) {
+        self.display.hash(into: &hasher)
     }
 }
 
-class Post: ErrorGenerating {
+class Post {
     let directory: DirectoryPath
 
     struct MetaInfo {
@@ -131,7 +131,7 @@ class Post: ErrorGenerating {
         self.directory = directory
 
         guard let file = try Post.metaPath(in: directory).file else {
-            throw Post.error("loading post", because: "the meta file doesn't exist")
+            throw GenericSwiftlierError("loading post", because: "the meta file doesn't exist")
         }
 
         let metaInfo = try JSONDecoder().decode(MetaInfo.self, from: try file.contents())

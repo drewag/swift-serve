@@ -8,6 +8,7 @@
 
 import CommandLineParser
 import Swiftlier
+import SwiftlierCLI
 import Foundation
 import SQL
 import PostgreSQL
@@ -42,7 +43,7 @@ public enum SwiftServiceEnvironment {
     }
 }
 
-public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router, ErrorGenerating {
+public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     public let databaseChanges: [DatabaseChange]?
     public let routes: [Route]
     public let allowCrossOriginRequests: Bool
@@ -273,7 +274,7 @@ private extension SwiftServeInstance {
             , !string.isEmpty
             else
         {
-            throw self.error("loading database password", because: "it is invalid. Please run config command.")
+            throw GenericSwiftlierError("loading database password", because: "it is invalid. Please run config command.")
         }
 
         return string
@@ -313,7 +314,7 @@ private extension SwiftServeInstance {
             , let extraInfo = try? JSONDecoder().decode(ExtraInfo.self, from: data)
             else
         {
-            throw self.error("loading config", because: "it is invalid. Please run config command.")
+            throw GenericSwiftlierError("loading config", because: "it is invalid. Please run config command.")
         }
         return extraInfo
     }

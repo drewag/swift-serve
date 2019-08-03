@@ -8,8 +8,8 @@
 import Foundation
 import Swiftlier
 
-public struct MimePart: ErrorGenerating {
-    public struct MessageDeliveryStatus: ErrorGenerating {
+public struct MimePart {
+    public struct MessageDeliveryStatus {
         public let originalRecipient: String?
         public let finalRecipient: String
         public let status: String
@@ -65,7 +65,7 @@ public struct MimePart: ErrorGenerating {
 
     public init(data: Data, characterEncoding: String.Encoding = .isoLatin1) throws {
         guard let string = String(data: data, encoding: characterEncoding) else {
-            throw MimePart.error("parsing", because: "data is not valid")
+            throw GenericSwiftlierError("parsing", because: "data is not valid")
         }
         try self.init(rawContents: string)
     }
@@ -79,7 +79,7 @@ public struct MimePart: ErrorGenerating {
 
     init(body: Data, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition, characterEncoding: String.Encoding = .isoLatin1) throws {
         guard let string = String(data: body, encoding: characterEncoding) else {
-            throw MimePart.error("parsing", because: "data is not valid")
+            throw GenericSwiftlierError("parsing", because: "data is not valid")
         }
         try self.init(body: string, headers: headers, contentType: contentType, contentTransferEncoding: contentTransferEncoding, contentDisposition: contentDisposition)
     }
@@ -97,7 +97,7 @@ public struct MimePart: ErrorGenerating {
 
         switch contentType {
         case .other(let other):
-            throw MimePart.error("parsing", because: "an unknown content type was found '\(other)'")
+            throw GenericSwiftlierError("parsing", because: "an unknown content type was found '\(other)'")
         case .html(let encoding):
             self.content = .html(type(of: self).string(from: body, transferEncoding: contentTransferEncoding, characterEncoding: encoding))
         case .none:
@@ -605,11 +605,11 @@ private extension MimePart.MessageDeliveryStatus {
         }
 
         guard let final = finalRecipient else {
-            throw MimePart.MessageDeliveryStatus.error("parsing", because: "the delivery status is missing a final recipient")
+            throw GenericSwiftlierError("parsing", because: "the delivery status is missing a final recipient")
         }
 
         guard let status = foundStatus else {
-            throw MimePart.MessageDeliveryStatus.error("parsing", because: "the delivery status is missing a status")
+            throw GenericSwiftlierError("parsing", because: "the delivery status is missing a status")
         }
 
 

@@ -32,11 +32,7 @@ public protocol SubscribableEmail: AnySubscribableEmail {
     func build(with context: inout [String:Any])
 }
 
-public struct SubscribableEmailCenter: ErrorGenerating, Router {
-    struct ErrorReason {
-        static let invalidToken = Swiftlier.ErrorReason("the token is invalid")
-    }
-
+public struct SubscribableEmailCenter: Router {
     let possibleEmails: [AnySubscribableEmail.Type]
 
     public init(emailTypes: [AnySubscribableEmail.Type]) {
@@ -60,7 +56,7 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
                 context["message"] = "Unsubscribed from \(emailType.emailName) emails successfully"
             }
             catch let error {
-                context["error"] = request.error("unsubscribing", from: error).description
+                context["error"] = error.swiftlierError(while: "unsubscribing").description
             }
         }))
     }
@@ -92,15 +88,15 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
     public func unsubscribe(usingToken token: String, using connection: Connection) throws -> AnySubscribableEmail.Type {
         let components = token.components(separatedBy: "_")
         guard components.count == 3 else {
-            throw self.userError("unsubscribing", because: ErrorReason.invalidToken)
+            throw GenericSwiftlierError("unsubscribing", because: "the token is invalid")
         }
 
         let tableName = components[0].offsetCharacters(by: -1)
         let fieldName = components[1].offsetCharacters(by: -1)
         let rawToken = components[2]
 
-        guard let index = self.possibleEmails.index(where: {$0.tableName == tableName && $0.fieldName == fieldName}) else {
-            throw self.userError("unsubscribing", because: ErrorReason.invalidToken)
+        guard let index = self.possibleEmails.firstIndex(where: {$0.tableName == tableName && $0.fieldName == fieldName}) else {
+            throw GenericSwiftlierError("unsubscribing", because: "the token is invalid")
         }
 
         let email = self.possibleEmails[index]
@@ -108,7 +104,7 @@ public struct SubscribableEmailCenter: ErrorGenerating, Router {
         let update = UpdateArbitraryQuery(tableName).filtered(field == rawToken)
             .setting([field:nil])
         guard try connection.execute(update).countAffected > 0 else {
-            throw self.userError("unsubscribing", because: ErrorReason.invalidToken)
+            throw GenericSwiftlierError("unsubscribing", because: "the token is invalid")
         }
         return email
     }
@@ -187,7 +183,7 @@ private extension SubscribableEmailCenter {
     func token<Subscribable: SubscribableEmail>(for subscriber: Subscribable.Subscriber, to email: Subscribable, using connection: Connection) throws -> String? {
         let result = try connection.execute(email.select.filtered(subscriber.justThisInstance))
         guard let first = result.rows.next() else {
-            throw self.error("sending email", because: "The subscriber could not be found")
+            throw GenericSwiftlierError("sending email", because: "The subscriber could not be found")
         }
 
         guard let rawToken: String = try first.getIfExists(type(of: email).field) else {

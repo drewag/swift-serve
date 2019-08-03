@@ -9,7 +9,7 @@ import Foundation
 import Swiftlier
 import SQL
 
-public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: ErrorGenerating {
+public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser> {
     public typealias CustomizableInfo = (
         serviceName: String,
         supportEmail: String,
@@ -29,7 +29,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
             , session.isValid(for: user)
             else
         {
-            throw self.error("authenticating", because: "the session is invalid")
+            throw GenericSwiftlierError("authenticating", because: "the session is invalid")
         }
 
         return user
@@ -40,7 +40,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
             , user.passwordMatches(password)
             else
         {
-            throw self.userError("logging in", because: "that email and password combination is incorrect.")
+            throw GenericSwiftlierError("logging in", because: "that email and password combination is incorrect.", byUser: true)
         }
 
         return user
@@ -56,7 +56,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
         ) throws -> User
     {
         guard try self.user(withEmail: email) == nil else {
-            throw self.userError("creating user", because: "a user with that email already exists")
+            throw GenericSwiftlierError("creating user", because: "a user with that email already exists", byUser: true)
         }
         let salt = String(randomOfLength: 16)
         let encryptedPassword = password.encrypt(withHash: salt)
@@ -75,7 +75,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
             extraProperties: extraProperties
         )
         guard let row = try self.connection.execute(user.insert().returning()).rows.next() else {
-            throw self.error("creating user", because: "it could not be retrieved after creation")
+            throw GenericSwiftlierError("creating user", because: "it could not be retrieved after creation", byUser: true)
         }
         let saved: User = try row.decode(purpose: .create)
         try self.sendVerificationEmail(
@@ -100,7 +100,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
     {
         var user = user
         guard currentPassword.encrypt(withHash: user.passwordSalt) == user.encryptedPassword else {
-            throw self.userError("saving", because: "current password was incorrect")
+            throw GenericSwiftlierError("saving", because: "current password was incorrect", byUser: true)
         }
 
         if let newPassword = password {
@@ -111,7 +111,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
 
         if email != user.email {
             guard try self.user(withEmail: email) == nil else {
-                throw self.userError("saving", because: "a user with that email already exists")
+                throw GenericSwiftlierError("saving", because: "a user with that email already exists", byUser: true)
             }
             user.email = email
             var verificationToken: String = ""
@@ -137,11 +137,11 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
 
     public func verifyUser(withToken token: String) throws -> User {
         guard !token.isEmpty else {
-            throw self.userError("verifying account", because: "this link is invalid")
+            throw GenericSwiftlierError("verifying account", because: "this link is invalid", byUser: true)
         }
 
         guard var user = try self.user(withVerificationToken: token) else {
-            throw self.userError("verifying account", because: "this link has already been used or a new link has been requested. You can always request a new link and wait for the new email to come in.")
+            throw GenericSwiftlierError("verifying account", because: "this link has already been used or a new link has been requested. You can always request a new link and wait for the new email to come in.", byUser: true)
         }
 
         user.emailVerificationToken = nil
@@ -155,7 +155,7 @@ public struct EmailVerifiedUserAuthenticationService<User: EmailVerifiedUser>: E
 
     public func resendVerificationEmail(for user: User, baseUrl: URL, info: CustomizableInfo) throws {
         guard let token = user.emailVerificationToken else {
-            throw self.userError("sending verification token", because: "you are already verified")
+            throw GenericSwiftlierError("sending verification token", because: "you are already verified", byUser: true)
         }
         try self.sendVerificationEmail(for: user, withToken: token, baseUrl: baseUrl, info: info)
     }

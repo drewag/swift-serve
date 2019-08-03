@@ -12,7 +12,7 @@ extension Request {
 
     public func unverifiedUser<User: EmailVerifiedUser>() throws -> User {
         guard let session = try UserSession(request: self) else {
-            throw self.networkError("authenticating", withStatus: .badRequest, because: "a session has not been specified")
+            throw SwiftServeError(.badRequest, "Authenticating", reason: "A session has not been specified")
         }
 
         let service = EmailVerifiedUserAuthenticationService<User>(connection: self.databaseConnection)
@@ -22,7 +22,7 @@ extension Request {
     public func verifiedUser<User: EmailVerifiedUser>() throws -> User {
         let user: User = try self.unverifiedUser()
         guard user.isVerified else {
-            throw self.networkError("authenticating", withStatus: .forbidden, because: "you have not verified your email yet")
+            throw SwiftServeError(.forbidden, "Authenticating", reason: "You have not verified your email yet")
         }
         return user
     }

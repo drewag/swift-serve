@@ -7,18 +7,19 @@
 //
 
 import Swiftlier
+import Decree
 
 public protocol PathComponent {
-    func matches(path: String, using method: HTTPMethod) -> Bool
+    func matches(path: String, using method: Method) -> Bool
     func consume(path: String) -> String
 }
 
 struct StaticPathComponent: PathComponent {
     let pattern: String
-    let method: HTTPMethod
+    let method: Method?
     let allowSubPaths: Bool
 
-    func matches(path: String, using method: HTTPMethod) -> Bool {
+    func matches(path: String, using method: Method) -> Bool {
         guard method.matches(self.method) else {
             return false
         }
@@ -53,15 +54,15 @@ struct StaticPathComponent: PathComponent {
 }
 
 struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
-    let method: HTTPMethod
+    let method: Method?
     let consumeEntireSubPath: Bool
 
-    init(type: CaptureType.Type, method: HTTPMethod, consumeEntireSubPath: Bool) {
+    init(type: CaptureType.Type, method: Method?, consumeEntireSubPath: Bool) {
         self.method = method
         self.consumeEntireSubPath = consumeEntireSubPath
     }
 
-    func matches(path: String, using method: HTTPMethod) -> Bool {
+    func matches(path: String, using method: Method) -> Bool {
         guard method.matches(self.method) else {
             return false
         }
@@ -108,9 +109,9 @@ struct VariablePathComponent<CaptureType: CapturableType>: PathComponent {
 }
 
 struct AllPathComponent: PathComponent {
-    let method: HTTPMethod
+    let method: Method?
 
-    func matches(path: String, using method: HTTPMethod) -> Bool {
+    func matches(path: String, using method: Method) -> Bool {
         guard method.matches(self.method) else {
             return false
         }
@@ -119,5 +120,15 @@ struct AllPathComponent: PathComponent {
 
     func consume(path: String) -> String {
         return path
+    }
+}
+
+extension Method {
+    func matches(_ other: Method?) -> Bool {
+        guard let other = other else {
+            return true
+        }
+
+        return self == other
     }
 }

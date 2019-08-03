@@ -9,6 +9,7 @@
 import XCTest
 import Foundation
 import Swiftlier
+import Decree
 @testable import SwiftServe
 
 struct TestRouter: Router {

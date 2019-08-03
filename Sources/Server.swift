@@ -8,8 +8,9 @@
 
 import Foundation
 import Swiftlier
+import Decree
 
-public protocol Server: ErrorGenerating {
+public protocol Server {
     var extraLogForRequest: ((Request) -> String?)? {get set}
     var postProcessResponse: ((inout Response) -> ())? {get set}
     var errorViewRoot: String {get}
@@ -23,10 +24,10 @@ public protocol Server: ErrorGenerating {
 extension Server {
     public func log(response: Response, to request: Request) {
         if let extraLog = self.extraLogForRequest?(request) {
-            Logger.main.log("\(request) \(extraLog) -> \(response)")
+            print("\(request) \(extraLog) -> \(response)")
         }
         else {
-            Logger.main.log("\(request) -> \(response)")
+            print("\(request) -> \(response)")
         }
     }
 
@@ -35,21 +36,21 @@ extension Server {
     } 
 
     public func response(for error: Error, from request: Request) -> Response {
-        if let redirect = error as? RedirectingError {
-            return request.response(redirectingTo: redirect.destination, .temporarily, headers: redirect.headers)
-        }
-
-        let reportableError = self.error("handling request", from: error)
-
+        let swiftlierError = error.swiftlierError(while: "handling request")
         let status: HTTPStatus
-        switch reportableError {
-        case let networkError as NetworkError:
-            status = networkError.status
+        switch swiftlierError.error {
+        case let error as SwiftServeError:
+            switch error.code {
+            case let .redirect(type, destination, headers):
+                return request.response(redirectingTo: destination, type, headers: headers)
+            case let .status(errorStatus, _):
+                status = errorStatus
+            }
         default:
-            switch reportableError.perpetrator {
-            case .system, .temporaryEnvironment:
+            if swiftlierError.isInternal {
                 status = .internalServerError
-            case .user:
+            }
+            else {
                 status = .badRequest
             }
         }
@@ -59,11 +60,11 @@ extension Server {
                 template: "\(self.errorViewRoot)Unhandled.html",
                 status: status,
                 build: { context in
-                    context["message"] = reportableError.description
-                    context["doing"] = reportableError.doing
-                    context["reason"] = reportableError.reason.because
-                    context["alert_title"] = reportableError.alertDescription.title
-                    context["alert_message"] = reportableError.alertDescription.message
+                    context["title"] = swiftlierError.title
+                    context["alertMessage"] = swiftlierError.alertMessage
+                    context["details"] = swiftlierError.details
+                    context["description"] = swiftlierError.description
+                    context["backtrace"] = swiftlierError.backtrace
                 }
             ))
         {
@@ -71,10 +72,10 @@ extension Server {
         }
         else {
             do {
-                return try request.response(json: reportableError, status: status, error: reportableError)
+                return try request.response(json: GenericSwiftlierError(swiftlierError), status: status, error: swiftlierError)
             }
             catch {
-                return request.response(body: reportableError.description, status: status, error: reportableError)
+                return request.response(body: swiftlierError.description, status: status, error: swiftlierError)
             }
         }
     }

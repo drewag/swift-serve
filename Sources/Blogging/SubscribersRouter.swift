@@ -8,13 +8,16 @@
 
 import Swiftlier
 
-struct SubscribersRouter: Router, ErrorGenerating {
-    enum SubscriberField: String, HTMLFormField {
-        case email
-
-        static var action = "subscribing"
-        static var all: [SubscriberField] = [.email]
+struct SubscribersRouter: Router {
+    struct Subscriber: Decodable {
+        let email: EmailAddress
     }
+//    enum SubscriberField: String, HTMLFormField {
+//        case email
+//
+//        static var action = "subscribing"
+//        static var all: [SubscriberField] = [.email]
+//    }
 
     private let configuration: BlogConfiguration
 
@@ -25,20 +28,18 @@ struct SubscribersRouter: Router, ErrorGenerating {
     var routes: [Route] {
         return [
             .any("new", handler: { request in
-                let form: HTMLForm<SubscriberField> = request.parseForm(process: { form in
-                    let email: String = try form.requiredValue(for: .email)
-                    guard email.isValidEmail else {
-                        throw SubscribersRouter.userError("subscribing", because: "the email is invalid")
-                    }
-                    let service = SubscriberService(connection: request.databaseConnection, configuration: self.configuration)
-                    try service.addSubscriber(withEmail: email)
-                    form.message = "Subscribed Successfully"
-                    return nil
-                })
-                return try request.responseStatus(
+                return .handled(try request.responseCreating(
+                    type: Subscriber.self,
                     template: "Views/Blog/NewSubscriber.html",
-                    form: form
-                )
+                    build: { subscriber, context in
+                        if let subscriber = subscriber {
+                            let service = SubscriberService(connection: request.databaseConnection, configuration: self.configuration)
+                            try service.addSubscriber(withEmail: subscriber.email.string)
+                            context["message"] = "Subscribed Successfully"
+                        }
+                        return nil
+                    }
+                ))
             }),
             .get("unsubscribe", handler: { request in
                 return .handled(try request.response(
@@ -57,11 +58,8 @@ struct SubscribersRouter: Router, ErrorGenerating {
                             try service.unsubscribe(subscriber)
                             context["message"] = "Unsubscribed successfully. You will not recieve any additional emails and your email has been completely removed from our database."
                         }
-                        catch let error as ReportableError {
+                        catch let error as SwiftlierError {
                             context["error"] = error.description
-                        }
-                        catch let error as ReportableErrorConvertible {
-                            context["error"] = error.reportableError.description
                         }
                         catch let error {
                             context["error"] = "\(error)"

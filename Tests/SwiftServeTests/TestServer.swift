@@ -10,12 +10,13 @@ import Foundation
 import Swiftlier
 import SQL
 import PostgreSQL
+import Decree
 
 @testable import SwiftServe
 
 struct TestRequest: Request {
     let databaseConnection: Connection = PostgreSQLConnection()
-    let method: HTTPMethod
+    let method: Decree.Method
     let endpoint: URL
     let data: Data
     let headers: [String:String] = [:]
@@ -23,7 +24,7 @@ struct TestRequest: Request {
     let host: String = ""
     let ip: String = ""
 
-    init(method: HTTPMethod, endpoint: URL, data: Data) {
+    init(method: Decree.Method, endpoint: URL, data: Data) {
         self.method = method
         self.endpoint = endpoint
         self.data = data
@@ -32,11 +33,11 @@ struct TestRequest: Request {
     var preprocessStack = RequestProcessStack()
     var postprocessStack = RequestProcessStack()
 
-    func response(withData data: Data, status: HTTPStatus, error: ReportableError?, headers: [String:String]) -> Response {
+    func response(withData data: Data, status: HTTPStatus, error: SwiftlierError?, headers: [String:String]) -> Response {
         return TestResponse(data: data, status: status, headers: headers, error: error)
     }
 
-    func response(withFileAt path: String, status: HTTPStatus, error: ReportableError?, headers: [String:String]) throws -> Response {
+    func response(withFileAt path: String, status: HTTPStatus, error: SwiftlierError?, headers: [String:String]) throws -> Response {
         let url = URL(fileURLWithPath: path)
         let path = FileSystem.default.path(from: url)
         let data = try path.file?.contents() ?? Data()
@@ -48,7 +49,7 @@ struct TestResponse: Response {
     let data: Data
     let status: HTTPStatus
     var headers: [String : String]
-    var error: ReportableError?
+    var error: SwiftlierError?
 }
 
 struct TestServer: Server {
@@ -69,7 +70,7 @@ struct TestServer: Server {
         self.errorViewRoot = errorViewRoot
     }
 
-    func route(string: String, at url: URL, as method: HTTPMethod) throws -> Response {
+    func route(string: String, at url: URL, as method: Decree.Method) throws -> Response {
         let path = url.relativePath
         let data: Data
         if string.isEmpty {

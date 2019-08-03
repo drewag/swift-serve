@@ -44,7 +44,7 @@ final class  MonthPosts {
 
     func append(post: PublishedPost) {
         let day = post.publishedDayString
-        if let index = self.days.index(where: {$0.day == day}) {
+        if let index = self.days.firstIndex(where: {$0.day == day}) {
             self.days[index].append(post: post)
         }
         else {
@@ -64,7 +64,7 @@ final class YearPosts {
 
     func append(post: PublishedPost) {
         let month = post.publishedMonthString
-        if let index = self.months.index(where: {$0.month == month}) {
+        if let index = self.months.firstIndex(where: {$0.month == month}) {
             self.months[index].append(post: post)
         }
         else {
