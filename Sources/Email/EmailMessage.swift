@@ -8,7 +8,7 @@
 public struct EmailMessage {
     public let part: MimePart
 
-    public var headers: [String:String] {
+    public var headers: [CaseInsensitiveKey:String] {
         return self.part.headers
     }
 

@@ -15,7 +15,7 @@ public struct TestRequest: Request {
     public let method: Decree.Method
     public let endpoint: URL
     public let data: Data
-    public let headers: [String:String]
+    public let headers: [CaseInsensitiveKey:String]
     public let cookies: [String:String]
     public let host: String
     public let ip: String

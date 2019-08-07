@@ -26,7 +26,7 @@ extension SwiftServeInstance {
                 )
                 let method = Decree.Method(rawValue: request.httpMethod!)
                 let components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!
-                var headers = [String:String]()
+                var headers = [CaseInsensitiveKey:String]()
                 var cookies = [String:String]()
                 for (key, value) in request.allHTTPHeaderFields ?? [:] {
                     guard key.lowercased() != "cookie" else {
@@ -71,15 +71,15 @@ extension SwiftServeInstance {
         }
     }
 
-    public func get(from endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [String:String]? = nil) throws -> TestResponse {
+    public func get(from endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [CaseInsensitiveKey:String]? = nil) throws -> TestResponse {
         return try self.response(method: .get, from: endpoint, data: Data(), headers: headers, forAuth: auth)
     }
 
-    public func delete(from endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [String:String]? = nil) throws -> TestResponse {
+    public func delete(from endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [CaseInsensitiveKey:String]? = nil) throws -> TestResponse {
         return try self.response(method: .delete, from: endpoint, data: Data(), headers: headers, forAuth: auth)
     }
 
-    public func post(_ json: [String:Any]? = nil, to endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [String:String]? = nil) throws -> TestResponse {
+    public func post(_ json: [String:Any]? = nil, to endpoint: String, forAuth auth: (session: String, deviceId: String)? = nil, headers: [CaseInsensitiveKey:String]? = nil) throws -> TestResponse {
         let data: Data
         if let json = json {
             data = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
@@ -93,10 +93,10 @@ extension SwiftServeInstance {
 
 
 private extension SwiftServeInstance {
-    func response(method: Decree.Method, from endpoint: String, data: Data, headers: [String:String]?, forAuth auth: (session: String, deviceId: String)? = nil) throws -> TestResponse {
+    func response(method: Decree.Method, from endpoint: String, data: Data, headers: [CaseInsensitiveKey:String]?, forAuth auth: (session: String, deviceId: String)? = nil) throws -> TestResponse {
         let url = URL(string: "http://localhost:9999")!.appendingPathComponent(endpoint)
         var cookies = [String:String]()
-        var headers = headers ?? [String:String]()
+        var headers = headers ?? [CaseInsensitiveKey:String]()
         if let auth = auth {
             cookies["session"] = auth.session
             headers["deviceId"] = auth.deviceId

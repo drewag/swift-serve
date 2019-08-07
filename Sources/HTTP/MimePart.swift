@@ -51,7 +51,7 @@ public struct MimePart {
 
     public let name: String?
     public let content: Content
-    public let headers: [String:String]
+    public let headers: [CaseInsensitiveKey:String]
     public var contentType: ContentType
 
     public var plain: String? {
@@ -77,14 +77,14 @@ public struct MimePart {
         self.name = name
     }
 
-    init(body: Data, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition, characterEncoding: String.Encoding = .isoLatin1) throws {
+    init(body: Data, headers: [CaseInsensitiveKey:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition, characterEncoding: String.Encoding = .isoLatin1) throws {
         guard let string = String(data: body, encoding: characterEncoding) else {
             throw GenericSwiftlierError("parsing", because: "data is not valid")
         }
         try self.init(body: string, headers: headers, contentType: contentType, contentTransferEncoding: contentTransferEncoding, contentDisposition: contentDisposition)
     }
 
-    init(body: String, headers: [String:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition) throws {
+    init(body: String, headers: [CaseInsensitiveKey:String], contentType: ContentType, contentTransferEncoding: ContentTransferEncoding, contentDisposition: ContentDisposition) throws {
         switch contentDisposition {
         case .attachment(let name):
             self.name = name
@@ -151,7 +151,7 @@ public struct MimePart {
     }
 
     public init(rawContents: String, newline: String? = nil) throws {
-        var headers = [String:String]()
+        var headers = [CaseInsensitiveKey:String]()
         var fullLine = ""
 
         func processFullLine() {
@@ -354,7 +354,7 @@ public struct MimePart {
         return output
     }
 
-    public var rawBodyAndHeaders: (body: String, headers: [String:String]) {
+    public var rawBodyAndHeaders: (body: String, headers: [CaseInsensitiveKey:String]) {
         let (body, extraHeaders) = self.content.generateRaw(withName: self.name)
 
         var finalHeaders = self.headers

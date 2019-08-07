@@ -8,7 +8,7 @@ public protocol Request: CustomStringConvertible {
     var method: Decree.Method {get}
     var endpoint: URL {get}
     var data: Data {get}
-    var headers: [String:String] {get}
+    var headers: [CaseInsensitiveKey:String] {get}
     var cookies: [String:String] {get}
     var host: String {get}
     var ip: String {get}

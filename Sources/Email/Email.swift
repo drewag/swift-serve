@@ -25,7 +25,7 @@ public struct Email {
             self.id = id
         }
 
-        var bodyAndHeaders: (body: String, headers: [String:String]) {
+        var bodyAndHeaders: (body: String, headers: [CaseInsensitiveKey:String]) {
             var (body, headers) = self.rootPart.rawBodyAndHeaders
             headers["Mime-Version"] = "1.0"
 
@@ -58,7 +58,7 @@ public struct Email {
     public let returnPath: String?
     public let from: String
     public let body: String
-    public var headers = [String:String]()
+    public var headers = [CaseInsensitiveKey:String]()
 
     public init(to: String, subject: String, from: String, replyTo: String? = nil, HTMLBody: String) {
         self.init(to: to, subject: subject, from: from) { builder in
