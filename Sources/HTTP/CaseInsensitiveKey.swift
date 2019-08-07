@@ -19,7 +19,12 @@ public struct CaseInsensitiveKey: Hashable, ExpressibleByStringLiteral {
     }
 
     public func hash(into hasher: inout Hasher) {
-        self.rawValue.lowercased().hash(into: &hasher)
+        let raw = self.rawValue.lowercased()
+        raw.hash(into: &hasher)
+    }
+
+    public static func ==(lhs: CaseInsensitiveKey, rhs: CaseInsensitiveKey) -> Bool {
+        return lhs.rawValue.lowercased() == rhs.rawValue.lowercased()
     }
 
     public static func ==(lhs: CaseInsensitiveKey, rhs: String) -> Bool {
@@ -32,10 +37,6 @@ public struct CaseInsensitiveKey: Hashable, ExpressibleByStringLiteral {
 }
 
 extension Dictionary where Key == CaseInsensitiveKey, Value == String {
-    public var caseInsensitive: [CaseInsensitiveKey : String] {
-        return self
-    }
-
     public subscript(key: String) -> String? {
         get {
             let key = CaseInsensitiveKey(rawValue: key)
