@@ -58,6 +58,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate let productionPromise: OptionPromise
     fileprivate let testPromise: OptionPromise
     fileprivate var isTesting: Bool = false
+    fileprivate var initialize: ((SwiftServeInstance<S, ExtraInfo>) -> ())?
 
     public let domain: String
     public let customDatabaseName: String?
@@ -102,7 +103,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         allowCrossOriginRequests: Bool = false,
         databaseChanges: [DatabaseChange]?,
         routes: [Route],
-        customizeCommandLineParser: ((Parser) -> ())? = nil,
+        customizeCommandLineParser: ((Parser) -> ())? = nil,    
         extraSchemes: [Scheme] = []
         )
     {
@@ -144,7 +145,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         databaseChanges: [DatabaseChange]?,
         routes: [Route],
         customizeCommandLineParser: ((Parser) -> ())? = nil,
-        extraSchemes: [Scheme] = []
+        extraSchemes: [Scheme] = [],
+        initialize: ((SwiftServeInstance<S, ExtraInfo>) -> ())? = nil
         )
     {
         let parser = Parser(arguments: CommandLine.arguments)
@@ -156,6 +158,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.webConfiguration = webConfiguration
         self.blogConfiguration = blogConfiguration
         self.dataDirectories = dataDirectories
+        self.initialize = initialize
 
         var routes = routes
         if let config = blogConfiguration {
@@ -196,6 +199,8 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
+
+        initialize?(self)
     }
 
     public func preprocess(request: Request, context: inout [String : Any]) throws {
@@ -226,8 +231,10 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     }
 
     public func setupTest() {
+        self.loadedExtraInfo = nil
         self.isTesting = true
         try! self.loadDatabaseSetup()
+        self.initialize?(self)
     }
 }
 
@@ -238,6 +245,16 @@ public struct SwiftServeInstanceSpec {
     public let extraSchemes: [Scheme]
     public let dataDirectories: [String]
     public let databaseRootName: String?
+}
+
+extension SwiftServeInstance {
+    func loadDatabaseSetup() throws {
+        DatabaseSetup = DatabaseSpec(
+            name: self.databaseName,
+            username: self.databaseRole,
+            password: try SwiftServeInstance.loadDatabasePassword(for: self.environment)
+        )
+    }
 }
 
 private extension SwiftServeInstance {
@@ -389,14 +406,6 @@ private extension SwiftServeInstance {
         } catch {
             print("Failed to save password: \(error)")
         }
-    }
-
-    func loadDatabaseSetup() throws {
-        DatabaseSetup = DatabaseSpec(
-            name: self.databaseName,
-            username: self.databaseRole,
-            password: try SwiftServeInstance.loadDatabasePassword(for: self.environment)
-        )
     }
 
     func setupCommands() {

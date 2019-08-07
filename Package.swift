@@ -16,7 +16,7 @@ let package = Package(
         .package(url: "https://github.com/kylef/Stencil.git", from: "0.11.0"),
         .package(url: "https://github.com/PerfectlySoft/Perfect-Markdown.git", from: "3.0.0"),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.0.0"),
-        .package(url: "https://github.com/drewag/Decree.git", from: "2.1.0"),
+        .package(url: "https://github.com/drewag/Decree.git", from: "4.0.0"),
         .package(url: "https://github.com/drewag/SwiftlierCLI.git", from: "5.0.0"),
     ],
     targets: [

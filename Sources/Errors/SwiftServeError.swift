@@ -9,15 +9,15 @@ import Foundation
 import Swiftlier
 import Decree
 
-struct SwiftServeError: SwiftlierError {
-    enum Code {
+public struct SwiftServeError: SwiftlierError {
+    public enum Code {
         case status(HTTPStatus, underlyingError: SwiftlierError)
         case redirect(Redirect, destination: String, headers: [String:String])
     }
 
-    let code: Code
+    public let code: Code
 
-    var title: String {
+    public var title: String {
         switch self.code {
         case .status(_, let underlyingError):
             return underlyingError.title
@@ -33,7 +33,7 @@ struct SwiftServeError: SwiftlierError {
         }
     }
 
-    var alertMessage: String {
+    public var alertMessage: String {
         switch self.code {
         case .status(_, let underlyingError):
             return underlyingError.alertMessage
@@ -42,7 +42,7 @@ struct SwiftServeError: SwiftlierError {
         }
     }
 
-    var details: String? {
+    public var details: String? {
         switch self.code {
         case .status(let status, let underlyingError):
             if let details = underlyingError.details {
@@ -61,7 +61,7 @@ struct SwiftServeError: SwiftlierError {
         }
     }
 
-    var isInternal: Bool {
+    public var isInternal: Bool {
         switch self.code {
         case .redirect:
             return true
@@ -72,7 +72,7 @@ struct SwiftServeError: SwiftlierError {
 
     let _backtrace: [String]?
 
-    var backtrace: [String]? {
+    public var backtrace: [String]? {
         switch self.code {
         case .redirect:
             return _backtrace
@@ -81,7 +81,7 @@ struct SwiftServeError: SwiftlierError {
         }
     }
 
-    var description: String {
+    public var description: String {
         switch self.code {
         case .status(_, let underlyingError):
             return underlyingError.description
@@ -90,14 +90,20 @@ struct SwiftServeError: SwiftlierError {
         }
     }
 
-    init(_ code: Code, backtrace: [String]? = Thread.callStackSymbols) {
+    public init(_ code: Code, backtrace: [String]? = Thread.callStackSymbols) {
         self.code = code
         self._backtrace = backtrace
     }
 
-    init(_ status: HTTPStatus, _ doing: String, reason: String, details: String? = nil, byUser: Bool = false, backtrace: [String]? = Thread.callStackSymbols) {
+    public init(_ status: HTTPStatus, _ doing: String, reason: String, details: String? = nil, byUser: Bool = false, backtrace: [String]? = Thread.callStackSymbols) {
         let error = GenericSwiftlierError(title: "Error \(doing)", alertMessage: reason, details: details, isInternal: !byUser, backtrace: backtrace)
         self.code = .status(status, underlyingError: error)
         self._backtrace = backtrace
+    }
+}
+
+extension SwiftServeError: DecreeErrorDescribable {
+    public var reason: String {
+        return self.alertMessage
     }
 }
