@@ -48,3 +48,9 @@ extension Dictionary where Key == CaseInsensitiveKey, Value == String {
         }
     }
 }
+
+extension CaseInsensitiveKey: CustomStringConvertible {
+    public var description: String {
+        return self.rawValue
+    }
+}
