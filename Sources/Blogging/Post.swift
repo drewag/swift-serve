@@ -102,7 +102,12 @@ class Post {
         }
 
         let text = try self.contentsPath().file?.string() ?? ""
-        return text.markdownToHTML ?? ""
+        var html = (text.markdownToHTML ?? "")
+        if let regex = try? NSRegularExpression(pattern: "<pre><code>// (.*)$\\n", options: [.caseInsensitive,.anchorsMatchLines]) {
+            let range = NSMakeRange(0, html.count)
+            html = regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "<pre><code class=\"lang-$1\">")
+        }
+        return html
     }
 
     func imagePath() throws -> Path {
