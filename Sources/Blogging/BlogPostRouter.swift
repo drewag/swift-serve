@@ -32,7 +32,8 @@ class BlogPostRouter: ParameterizedBlogRouter<(((Int, Int), Int), String)> {
                 template: "Views/Blog/Post.html",
                 build: { context in
                     context["title"] = post.metaInfo.title
-                    context["description"] = post.metaInfo.metaDescription
+                    context["summary"] = post.metaInfo.summary
+                    context["metaDescription"] = post.metaInfo.metaDescription ?? post.metaInfo.summary
                     context["author"] = post.metaInfo.author
                     context["content"] = content
                     context["tags"] = post.metaInfo.tags
