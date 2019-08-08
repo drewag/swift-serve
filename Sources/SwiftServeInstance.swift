@@ -12,6 +12,7 @@ import SwiftlierCLI
 import Foundation
 import SQL
 import PostgreSQL
+import Decree
 
 public struct Scheme {
     public let name: String
@@ -496,8 +497,13 @@ private extension SwiftServeInstance {
 
         self.commandLineParser.command(named: "server") { parser in
             let port = parser.int(named: "port")
+            let verboseLogging = parser.option(named: "verbose", abbreviatedWith: "v")
 
             try parser.parse()
+
+            if verboseLogging.wasPresent {
+                Logger.shared.level = .info(filter: nil)
+            }
 
             // Load extra info now
             let _ = self.extraInfo
