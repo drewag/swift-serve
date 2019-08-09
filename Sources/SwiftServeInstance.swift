@@ -200,8 +200,6 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.extraSchemes = extraSchemes
 
         self.setupCommands()
-
-        initialize?(self)
     }
 
     public func preprocess(request: Request, context: inout [String : Any]) throws {
@@ -224,6 +222,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         do {
             try self.commandLineParser.parse(beforeExecute: {
                 try self.loadDatabaseSetup()
+                self.initialize?(self)
             })
         }
         catch {
