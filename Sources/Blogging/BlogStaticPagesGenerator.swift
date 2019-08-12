@@ -11,7 +11,7 @@ import Swiftlier
 import Stencil
 
 class BlogStaticPagesGenerator: StaticPagesGenerator {
-    fileprivate let environment = Environment(loader: FileSystemLoader(paths: ["."]))
+    fileprivate let environment = Environment.html
 
     let configuration: BlogConfiguration
 

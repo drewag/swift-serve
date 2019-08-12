@@ -82,12 +82,7 @@ public struct Email {
             builder.replyTo = replyTo
             builder.returnPath = returnPath
 
-            var environment = Environment(loader: FileSystemLoader(paths: ["."]))
-            let ext = Extension()
-            ext.registerSimpleTag("p", handler: { context in
-                return "<p style=\"\(paragraphStyle)\">"
-            })
-            environment.extensions.append(ext)
+            let environment = Environment(emailWithParagaraphStyle: paragraphStyle)
             var context = [String:Any]()
 
             try build(&context)

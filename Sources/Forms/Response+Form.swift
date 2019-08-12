@@ -7,6 +7,7 @@
 
 import Foundation
 import Decree
+import Stencil
 
 extension Request {
     public func responseCreating<Value: Decodable>(
@@ -19,7 +20,7 @@ extension Request {
         build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
         ) throws -> Response
     {
-        let environment = self.createEnvironment()
+        let environment = Environment.html
         var context = [String:Any]()
         try self.preprocessStack.process(request: self, context: &context)
         do {
@@ -59,7 +60,7 @@ extension Request {
         build: ((Value?, inout [String:Any]) throws -> Response?)? = nil
         ) throws -> Response
     {
-        let environment = self.createEnvironment()
+        let environment = Environment.html
 
         var context = [String:Any]()
         try self.preprocessStack.process(request: self, context: &context)
