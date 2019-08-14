@@ -263,6 +263,7 @@ private extension EmailVerifiedUserAuthenticationService {
             returnPath: info.bounceEmail,
             template: "Views/Emails/Auth/Verify",
             build: { context in
+                context["user"] = user
                 context["link"] = baseUrl.appendingPathComponent(info.verifyEndpoint).absoluteString + "?token=\(token)"
                 context["token"] = token
             }
@@ -275,7 +276,9 @@ private extension EmailVerifiedUserAuthenticationService {
             subject: "\(info.serviceName) - Your Password Has Been Changed",
             from: info.supportEmail,
             template: "Views/Emails/Auth/PasswordChanged",
-            build: { context in }
+            build: { context in
+                context["user"] = user
+            }
         )
     }
 
@@ -293,6 +296,7 @@ private extension EmailVerifiedUserAuthenticationService {
             returnPath: info.bounceEmail,
             template: "Views/Emails/Auth/Reset",
             build: { context in
+                context["user"] = user
                 context["link"] = baseUrl.appendingPathComponent(info.resetPasswordEndpoint).absoluteString + "?token=\(token)"
                 context["token"] = token
                 for (key, value) in user.extraDisplayProperties {
