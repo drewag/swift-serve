@@ -174,6 +174,13 @@ struct SingleValueFormDecodingContainer: SingleValueDecodingContainer {
             return date as! T
         }
 
+        guard type != URL.self else {
+            guard let url = URL(string: try self.decode(String.self)) else {
+                throw DecodingError.dataCorruptedError(in: self, debugDescription: "invalid link")
+            }
+            return url as! T
+        }
+
         guard type != EmailAddress.self else {
             let string = try self.decode(String.self)
             guard let email = try? EmailAddress(string: string) else {
@@ -345,6 +352,13 @@ struct UnkeyedFormDecodingContainer: UnkeyedDecodingContainer {
                 throw DecodingError.dataCorruptedError(in: self, debugDescription: "invalid date")
             }
             return date as! T
+        }
+
+        guard type != URL.self else {
+            guard let url = URL(string: try self.decode(String.self)) else {
+                throw DecodingError.dataCorruptedError(in: self, debugDescription: "invalid link")
+            }
+            return url as! T
         }
 
         guard type != EmailAddress.self else {
@@ -530,6 +544,13 @@ class KeyedFormDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol
                 throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "invalid date")
             }
             return date as! D
+        }
+
+        guard type != URL.self else {
+            guard let url = URL(string: try self.decode(String.self, forKey: key)) else {
+                throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "invalid link")
+            }
+            return url as! D
         }
 
         guard type != EmailAddress.self else {

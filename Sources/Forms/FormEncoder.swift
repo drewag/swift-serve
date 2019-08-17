@@ -106,6 +106,9 @@ struct SingleValueFormEncodingContainer: SingleValueEncodingContainer {
         else if let string = value as? String {
             try self.encode(string)
         }
+        else if let url = value as? URL {
+            try self.encode(url.absoluteString)
+        }
         else if let email = value as? EmailAddress {
             try self.encode(email.string)
         }
@@ -196,6 +199,9 @@ struct UnkeyedFormEncodingContainer: UnkeyedEncodingContainer {
         }
         else if let string = value as? String {
             try self.encode(string)
+        }
+        else if let url = value as? URL {
+            try self.encode(url.absoluteString)
         }
         else if let email = value as? EmailAddress {
             try self.encode(email.string)
@@ -297,6 +303,9 @@ class KeyedFormEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol
         }
         else if let string = value as? String {
             try self.encode(string, forKey: key)
+        }
+        else if let url = value as? URL {
+            try self.encode(url.absoluteString, forKey: key)
         }
         else if let email = value as? EmailAddress {
             try self.encode(email.string, forKey: key)
