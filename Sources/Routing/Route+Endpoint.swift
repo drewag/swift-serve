@@ -38,6 +38,12 @@ extension Route {
     public static func endpoint<E: OutEndpoint>(_ endpoint: E.Type, at path: String? = "", encodingPurpose: CodingPurpose = .create, handler: @escaping (Request) throws -> (HTTPStatus, E.Output)) -> Route where E.Output: Encodable {
         return self.route(method: E.method, path: path, handler: { request in
             let (status, output) = try handler(request)
+            if let data = output as? Data {
+                return .handled(request.response(body: data, status: status))
+            }
+            if let string = output as? String {
+                return .handled(request.response(body: string, status: status))
+            }
             return .handled(try request.response(json: output, purpose: encodingPurpose, status: status))
         })
     }
@@ -56,6 +62,12 @@ extension Route {
                 throw error.swiftlierError(while: "parsing request")
             }
             let (status, output) = try handler(request, decoded)
+            if let data = output as? Data {
+                return .handled(request.response(body: data, status: status))
+            }
+            if let string = output as? String {
+                return .handled(request.response(body: string, status: status))
+            }
             return .handled(try request.response(json: output, purpose: encodingPurpose, status: status))
         })
     }
@@ -90,6 +102,12 @@ extension ParameterizedRoute {
     public static func endpoint<E: OutEndpoint>(_ endpoint: E.Type, at path: String? = "", encodingPurpose: CodingPurpose = .create, handler: @escaping (Request, Param) throws -> (HTTPStatus, E.Output)) -> ParameterizedRoute<Param> where E.Output: Encodable {
         return self.route(method: E.method, path: path, handler: { request, param in
             let (status, output) = try handler(request, param)
+            if let data = output as? Data {
+                return .handled(request.response(body: data, status: status))
+            }
+            if let string = output as? String {
+                return .handled(request.response(body: string, status: status))
+            }
             return .handled(try request.response(json: output, purpose: encodingPurpose, status: status))
         })
     }
@@ -108,6 +126,12 @@ extension ParameterizedRoute {
                 throw error.swiftlierError(while: "parsing requests")
             }
             let (status, output) = try handler(request, param, decoded)
+            if let data = output as? Data {
+                return .handled(request.response(body: data, status: status))
+            }
+            if let string = output as? String {
+                return .handled(request.response(body: string, status: status))
+            }
             return .handled(try request.response(json: output, purpose: encodingPurpose, status: status))
         })
     }
