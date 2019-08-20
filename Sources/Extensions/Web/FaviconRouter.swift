@@ -41,11 +41,26 @@ class FaviconRouter: WebRouter {
             .get("manifest.json", handler: { request in
                 return .handled(try request.response(withFileAt: "\(self.assetRoot)manifest.json", status: .ok))
             }),
+            .get("mstile-70x70.png", handler: { request in
+                return .handled(try request.response(withFileAt: "\(self.assetRoot)mstile-70x70.png", status: .ok))
+            }),
+            .get("mstile-144x144.png", handler: { request in
+                return .handled(try request.response(withFileAt: "\(self.assetRoot)mstile-144x144.png", status: .ok))
+            }),
             .get("mstile-150x150.png", handler: { request in
                 return .handled(try request.response(withFileAt: "\(self.assetRoot)mstile-150x150.png", status: .ok))
             }),
+            .get("mstile-310x150.png", handler: { request in
+                return .handled(try request.response(withFileAt: "\(self.assetRoot)mstile-310x150.png", status: .ok))
+            }),
+            .get("mstile-310x310.png", handler: { request in
+                return .handled(try request.response(withFileAt: "\(self.assetRoot)mstile-310x310.png", status: .ok))
+            }),
             .get("safari-pinned-tab.svg", handler: { request in
                 return .handled(try request.response(withFileAt: "\(self.assetRoot)safari-pinned-tab.svg", status: .ok))
+            }),
+            .get("site.webmanifest", handler: { request in
+                return .handled(try request.response(withFileAt: "\(self.assetRoot)site.webmanifest", status: .ok))
             }),
         ]
     }
