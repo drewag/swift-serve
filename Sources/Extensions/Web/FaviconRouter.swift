@@ -8,11 +8,7 @@
 
 class FaviconRouter: WebRouter {
     var assetRoot: String {
-        var path = "Assets/img/favicons/"
-        if !self.configuration.viewRoot.isEmpty {
-            path += self.configuration.viewRoot + "/"
-        }
-        return path
+        return "Assets/img/favicons/"
     }
 
     override var routes: [Route] {
@@ -33,6 +29,7 @@ class FaviconRouter: WebRouter {
                 return .handled(try request.response(withFileAt: "\(self.assetRoot)favicon-16x16.png", status: .ok))
             }),
             .get("favicon-32x32.png", handler: { request in
+                print("\(self.assetRoot)favicon-32x32.png")
                 return .handled(try request.response(withFileAt: "\(self.assetRoot)favicon-32x32.png", status: .ok))
             }),
             .get("favicon.ico", handler: { request in
