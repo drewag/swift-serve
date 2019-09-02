@@ -35,7 +35,12 @@ class PublishedPost: Post {
     }
 
     var permanentRelativeImagePath: String {
-        return self.permanentRelativePath + "/photo.jpg"
+        if self.hasGif {
+            return self.permanentRelativePath + "/photo.gif"
+        }
+        else {
+            return self.permanentRelativePath + "/photo.jpg"
+        }
     }
 
     init(post: Post, published: Date) throws {

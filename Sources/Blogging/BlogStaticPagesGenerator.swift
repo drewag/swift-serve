@@ -83,6 +83,9 @@ private extension BlogStaticPagesGenerator {
         let imagePath = try directory.file("photo.jpg")
         let _ = try post.imagePath().file?.copy(to: imagePath, canOverwrite: true)
 
+        let gifPath = try directory.file("photo.gif")
+        let _ = try post.gifPath().file?.copy(to: gifPath, canOverwrite: true)
+
         let metaPath = try directory.file("meta.json")
         let _ = try post.metaPath().file?.copy(to: metaPath, canOverwrite: true)
 

@@ -96,6 +96,13 @@ class Post {
         return nil != path.file
     }
 
+    var hasGif: Bool {
+        guard let path = try? self.gifPath() else {
+            return false
+        }
+        return nil != path.file
+    }
+
     func loadHtml() throws -> String {
         if let html = self.html {
             return html
@@ -112,6 +119,10 @@ class Post {
 
     func imagePath() throws -> Path {
         return try self.directory.file("photo.jpg")
+    }
+
+    func gifPath() throws -> Path {
+        return try self.directory.file("photo.gif")
     }
 
     static func metaPath(in directory: DirectoryPath) throws -> Path {

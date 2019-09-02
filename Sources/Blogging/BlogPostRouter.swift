@@ -38,7 +38,10 @@ class BlogPostRouter: ParameterizedBlogRouter<(((Int, Int), Int), String)> {
                     context["content"] = content
                     context["tags"] = post.metaInfo.tags
                     context["published"] = publishedDate.date
-                    if post.hasImage {
+                    if post.hasGif {
+                        context["imageUrl"] = request.endpoint.appendingPathComponent("photo.gif").relativePath
+                    }
+                    else if post.hasImage {
                         context["imageUrl"] = request.endpoint.appendingPathComponent("photo.jpg").relativePath
                     }
                     context["permaLink"] = request.endpoint.relativePath

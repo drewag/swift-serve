@@ -17,7 +17,10 @@ extension Post {
         context["isoPublished"] = self.metaInfo.published?.iso8601DateTime ?? "Unpublished"
         context["isoModified"] = self.metaInfo.modified?.iso8601DateTime ?? "Unpublished"
         context["summary"] = self.metaInfo.summary
-        if (try? self.imagePath().file) ?? nil != nil {
+        if self.hasGif {
+            context["imageUrl"] = baseUrl.appendingPathComponent("photo.gif").relativePath
+        }
+        else if self.hasImage {
             context["imageUrl"] = baseUrl.appendingPathComponent("photo.jpg").relativePath
         }
         context["content"] = try self.loadHtml().replacingOccurrences(of: "{{postEndpoint}}", with: permaLink)
@@ -29,7 +32,10 @@ extension Post {
         context["author"] = self.metaInfo.author
         context["published"] = self.metaInfo.published?.date ?? "Unpublished"
         context["summary"] = self.metaInfo.summary
-        if (try? self.imagePath().file) ?? nil != nil {
+        if self.hasGif {
+            context["imageUrl"] = "preview/" + self.directory.name + "/photo.gif"
+        }
+        else if self.hasImage {
             context["imageUrl"] = "preview/" + self.directory.name + "/photo.jpg"
         }
         context["link"] = "preview/" + self.directory.name
