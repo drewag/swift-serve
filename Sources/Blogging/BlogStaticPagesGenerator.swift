@@ -206,6 +206,7 @@ private extension BlogStaticPagesGenerator {
                 "summary": post.metaInfo.summary,
                 "author": post.metaInfo.author,
                 "tags": post.metaInfo.tags,
+                "imageURL": post.permanentRelativeImagePath,
             ]
         })
 
