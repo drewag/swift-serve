@@ -34,18 +34,40 @@ class PublishedPost: Post {
         return "posts/\(self.publishedYearString)/\(self.publishedMonthString)/\(self.publishedDayString)/\(self.urlTitle)"
     }
 
-    var permanentRelativeImagePath: String {
+    var permanentRelativeImagePath: String? {
         if self.hasGif {
             return self.permanentRelativePath + "/photo.gif"
         }
-        else {
+        else if self.hasImage {
             return self.permanentRelativePath + "/photo.jpg"
         }
+        return nil
     }
 
     init(post: Post, published: Date) throws {
         self.published = published
 
         try super.init(directory: post.directory)
+    }
+
+    override subscript(_ key: String) -> Any? {
+        if let value = super[key] {
+            return value
+        }
+
+        switch key {
+        case "permaLink":
+            return self.permanentRelativePath
+        case "modified":
+            return self.modified.iso8601DateTime
+        case "published":
+            return self.published.iso8601DateTime
+        case "publishedYear":
+            return self.published.year
+        case "imageURL":
+            return self.permanentRelativeImagePath
+        default:
+            return nil
+        }
     }
 }

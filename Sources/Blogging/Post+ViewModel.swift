@@ -57,9 +57,8 @@ extension PublishedPost {
 
     func buildPublishedReference(to context: inout [String:Any]) {
         self.buildPreviewReference(to: &context)
-        if (try? self.imagePath().file) ?? nil != nil {
-            context["imageUrl"] = self.permanentRelativeImagePath
-        }
+
+        context["imageUrl"] = self.permanentRelativeImagePath
         context["link"] = self.permanentRelativePath
     }
 }

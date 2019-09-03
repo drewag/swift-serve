@@ -195,20 +195,7 @@ private extension BlogStaticPagesGenerator {
 
         context["domain"] = domain
         context["mostRecentUpdated"] = posts.first?.modified.iso8601DateTime
-        context["posts"] = posts.map({ post in
-            return [
-                "title": post.metaInfo.title,
-                "permaLink": post.permanentRelativePath,
-                "modified": post.modified.iso8601DateTime,
-                "published": post.published.iso8601DateTime,
-                "description": post.metaInfo.summary,
-                "publishedYear": post.published.year,
-                "summary": post.metaInfo.summary,
-                "author": post.metaInfo.author,
-                "tags": post.metaInfo.tags,
-                "imageURL": post.permanentRelativeImagePath,
-            ]
-        })
+        context["posts"] = posts
 
         let xml = try self.environment.renderTemplate(name: "Views/Blog/Template/feed.xml", context: context)
         try self.write(xml, to: "Generated-working/blog/feed.xml")

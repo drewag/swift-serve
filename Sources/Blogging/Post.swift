@@ -9,6 +9,7 @@
 import Foundation
 import Swiftlier
 import PerfectMarkdown
+import Stencil
 
 struct Tag: Hashable {
     let raw: String
@@ -26,7 +27,7 @@ struct Tag: Hashable {
     }
 }
 
-class Post {
+class Post: DynamicStringReferencable {
     let directory: DirectoryPath
 
     struct MetaInfo {
@@ -160,7 +161,25 @@ class Post {
         let components = directory.name.components(separatedBy: "-")
         self.urlTitle = components[1 ..< components.count].joined(separator: "-")
     }
+
+    subscript(_ key: String) -> Any? {
+        switch key {
+        case "title":
+            return self.metaInfo.title
+        case "description":
+            return self.metaInfo.summary
+        case "summary":
+            return self.metaInfo.summary
+        case "author":
+            return self.metaInfo.author
+        case "tags":
+            return self.metaInfo.tags
+        default:
+            return nil
+        }
+    }
 }
+
 
 fileprivate extension Post {
     func contentsPath() throws -> Path {
