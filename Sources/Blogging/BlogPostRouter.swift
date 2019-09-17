@@ -37,7 +37,7 @@ class BlogPostRouter: ParameterizedBlogRouter<(((Int, Int), Int), String)> {
                     context["author"] = post.metaInfo.author
                     context["content"] = content
                     context["tags"] = post.metaInfo.tags
-                    context["published"] = publishedDate.date
+                    context["published"] = publishedDate.date as String
                     if post.hasGif {
                         context["imageUrl"] = request.endpoint.appendingPathComponent("photo.gif").relativePath
                     }
