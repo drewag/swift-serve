@@ -10,6 +10,9 @@ import SQL
 import PostgreSQL
 import Decree
 import Swiftlier
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 extension TestURLSession: Decree.Session {}
 
