@@ -572,7 +572,7 @@ extension SwiftServeInstanceSpec: Codable {
         let components = versionString.components(separatedBy: ".")
         self.version = (Int(components[0])!, Int(components[1])!)
         self.domain = try container.decode(String.self, forKey: .domain)
-        self.customDeployDomain = try container.decodeIfPresent(String.self, forKey: .domain)
+        self.customDeployDomain = try container.decodeIfPresent(String.self, forKey: .customDeployDomain)
         self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
         self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
         self.dataDirectories = try container.decodeIfPresent([String].self, forKey: .dataDirectories) ?? []
