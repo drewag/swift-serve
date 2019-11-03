@@ -22,7 +22,7 @@ extension SwiftServeInstance {
             do {
                 try self.loadDatabaseSetup()
                 let connection = PostgreSQLConnection(
-                    host: "localhost",
+                    host: DatabaseSetup!.host,
                     databaseName: DatabaseSetup!.name,
                     username: DatabaseSetup!.username,
                     password: DatabaseSetup!.password

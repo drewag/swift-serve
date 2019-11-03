@@ -250,6 +250,7 @@ public struct SwiftServeInstanceSpec {
 extension SwiftServeInstance {
     func loadDatabaseSetup() throws {
         DatabaseSetup = DatabaseSpec(
+            host: SwiftServeInstance.loadDatabaseHost(),
             name: self.databaseName,
             username: self.databaseRole,
             password: try SwiftServeInstance.loadDatabasePassword(for: self.environment)
@@ -284,10 +285,16 @@ private extension SwiftServeInstance {
         return self.environment.databaseRole(fromRoot: name)
     }
 
+    static func loadDatabaseHost() -> String {
+        return (try? String(contentsOfFile: "Config/database_host.string"))?.trimmingWhitespaceOnEnds
+            ?? "localhost"
+    }
+
     static func loadDatabasePassword(for environment: SwiftServiceEnvironment) throws -> String {
         let newPath = self.pathForDatabasePassword(old: false)
         let oldPath = self.pathForDatabasePassword(old: true)
-        guard let string = (try? String(contentsOfFile: newPath)) ?? (try? String(contentsOfFile: oldPath))
+        guard let string = (try? String(contentsOfFile: newPath))?.trimmingWhitespaceOnEnds
+            ?? (try? String(contentsOfFile: oldPath))?.trimmingWhitespaceOnEnds
             , !string.isEmpty
             else
         {
