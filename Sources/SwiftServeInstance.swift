@@ -62,6 +62,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     fileprivate var initialize: ((SwiftServeInstance<S, ExtraInfo>) -> ())?
 
     public let domain: String
+    public let customDeployDomain: String?
     public let customDatabaseName: String?
     private var loadedExtraInfo: ExtraInfo?
     public var extraInfo: ExtraInfo {
@@ -137,6 +138,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
     ///   - extraSchemes: Extra schemes to add to Xcode projects
     public init(
         domain: String,
+        customDeployDomain: String? = nil,
         databaseName: String? = nil,
         dataDirectories: [String] = [],
         assetsEnabled: Bool = true,
@@ -196,6 +198,7 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
         self.customizeCommandLineParser = customizeCommandLineParser
         self.databaseChanges = databaseChanges
         self.domain = domain
+        self.customDeployDomain = customDeployDomain
         self.routes = routes
         self.extraSchemes = extraSchemes
 
@@ -241,10 +244,15 @@ public class SwiftServeInstance<S: Server, ExtraInfo: Codable>: Router {
 public struct SwiftServeInstanceSpec {
     public let version: (major: Int, minor: Int)
     public let domain: String
+    public let customDeployDomain: String?
     public let extraInfoSpec: String
     public let extraSchemes: [Scheme]
     public let dataDirectories: [String]
     public let databaseRootName: String?
+
+    public var deployDomain: String {
+        return self.customDeployDomain ?? self.domain
+    }
 }
 
 extension SwiftServeInstance {
@@ -264,6 +272,7 @@ private extension SwiftServeInstance {
         return SwiftServeInstanceSpec(
             version: (5,0),
             domain: self.domain,
+            customDeployDomain: self.customDeployDomain,
             extraInfoSpec: dict,
             extraSchemes: self.extraSchemes,
             dataDirectories: self.dataDirectories,
@@ -554,6 +563,7 @@ private extension SwiftServeInstance {
 extension SwiftServeInstanceSpec: Codable {
     enum CodingKeys: String, CodingKey {
         case version, domain, extraInfoSpec, extraSchemes, dataDirectories, databaseRootName
+        case customDeployDomain
     }
 
     public init(from decoder: Decoder) throws {
@@ -562,6 +572,7 @@ extension SwiftServeInstanceSpec: Codable {
         let components = versionString.components(separatedBy: ".")
         self.version = (Int(components[0])!, Int(components[1])!)
         self.domain = try container.decode(String.self, forKey: .domain)
+        self.customDeployDomain = try container.decodeIfPresent(String.self, forKey: .domain)
         self.extraInfoSpec = try container.decode(String.self, forKey: .extraInfoSpec)
         self.extraSchemes = try container.decode([Scheme].self, forKey: .extraSchemes)
         self.dataDirectories = try container.decodeIfPresent([String].self, forKey: .dataDirectories) ?? []
@@ -572,6 +583,7 @@ extension SwiftServeInstanceSpec: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode("\(self.version.major).\(self.version.minor)", forKey: .version)
         try container.encode(self.domain, forKey: .domain)
+        try container.encode(self.customDeployDomain, forKey: .customDeployDomain)
         try container.encode(self.extraInfoSpec, forKey: .extraInfoSpec)
         try container.encode(self.extraSchemes, forKey: .extraSchemes)
         try container.encode(self.dataDirectories, forKey: .dataDirectories)
