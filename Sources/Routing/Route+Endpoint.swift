@@ -28,6 +28,7 @@ extension Route {
                 decoded = try decoder.decode(E.Input.self, from: request.data)
             }
             catch {
+                print("Raw Response: \(String(data: request.data, encoding: .utf8) ?? "INVALID STRING")")
                 throw error.swiftlierError(while: "parsing requests")
             }
             let status = try handler(request, decoded)
@@ -59,6 +60,7 @@ extension Route {
                 decoded = try decoder.decode(E.Input.self, from: request.data)
             }
             catch {
+                print("Raw Response: \(String(data: request.data, encoding: .utf8) ?? "INVALID STRING")")
                 throw error.swiftlierError(while: "parsing request")
             }
             let (status, output) = try handler(request, decoded)
