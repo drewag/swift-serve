@@ -559,6 +559,7 @@ private extension SwiftServeInstance {
             generators.append(BlogStaticPagesGenerator(configuration: config))
         }
         self.commandLineParser.command(named: "regenerate", handler: RegenerateCommand.handler(generators: generators))
+        self.commandLineParser.command(UploadsCommand.self)
 
         self.blogRouter?.addCommands(to: self.commandLineParser)
         self.customizeCommandLineParser?(self.commandLineParser)

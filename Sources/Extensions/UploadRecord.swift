@@ -12,13 +12,14 @@ public struct UploadRecord: TableStorable, Codable {
     public static let tableName = "uploads"
 
     public enum CodingKeys: String, CodingKey {
-        case id, content
+        case id, content, created
     }
 
     public typealias Fields = CodingKeys
 
     let id: String
     let content: Data
+    let created: Date
 }
 
 extension UploadRecord.CodingKeys: Field {
@@ -28,6 +29,8 @@ extension UploadRecord.CodingKeys: Field {
             return self.spec(dataType: .string(length: nil), isPrimaryKey: true)
         case .content:
             return self.spec(dataType: .data, allowNull: false)
+        case .created:
+            return self.spec(dataType: .timestamp, allowNull: false)
         }
     }
 }

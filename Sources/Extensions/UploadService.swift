@@ -70,7 +70,7 @@ public struct UploadService: Router {
                 result = try connection.execute(select)
             } while result.rows.next() != nil
 
-            let record = UploadRecord(id: id.uuidString, content: data)
+            let record = UploadRecord(id: id.uuidString, content: data, created: Date())
             try connection.execute(try record.insert())
             return UploadIdentifier(id.uuidString)
         }
