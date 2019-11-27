@@ -8,7 +8,6 @@
 import Foundation
 import CommandLineParser
 import Swiftlier
-import OnBeatLib
 import SQL
 import PostgreSQL
 
